@@ -6,6 +6,9 @@ metadata:
 data:
   unbound.conf: |
     server:
+        # Run as root (required in K3s)
+        username: ""
+        
         # Network settings
         interface: 0.0.0.0
         port: 53
@@ -47,6 +50,8 @@ data:
         # Logging (reduce for production)
         verbosity: 1
         log-queries: no
+        use-syslog: no
+        logfile: ""
         
         # Prefetch popular domains
         prefetch: yes

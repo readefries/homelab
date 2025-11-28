@@ -15,15 +15,15 @@ spec:
       labels:
         app: unbound
     spec:
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
       containers:
       - name: unbound
-        image: alpine:latest
-        command: ["/bin/sh", "-c"]
-        args:
-          - |
-            apk add --no-cache unbound &&
-            unbound-checkconf /etc/unbound/unbound.conf &&
-            exec unbound -d -v -c /etc/unbound/unbound.conf
+        image: mvance/unbound:latest
+        securityContext:
+          privileged: true
         ports:
         - containerPort: 53
           name: dns-udp
@@ -45,16 +45,6 @@ spec:
         - name: unbound-config
           mountPath: /etc/unbound/root.hints
           subPath: root.hints
-        livenessProbe:
-          tcpSocket:
-            port: 53
-          initialDelaySeconds: 60
-          periodSeconds: 30
-        readinessProbe:
-          tcpSocket:
-            port: 53
-          initialDelaySeconds: 30
-          periodSeconds: 10
       volumes:
       - name: unbound-config
         configMap:
@@ -80,3 +70,4 @@ spec:
     targetPort: 53
     protocol: TCP
   type: ClusterIP
+  clusterIP: 10.43.238.134

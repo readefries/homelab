@@ -9,7 +9,7 @@ data:
         hosts /etc/coredns/blocklist.hosts {
             fallthrough
         }
-        forward . 10.96.185.235
+        forward . 10.43.238.134
         cache 3600
         errors
         log
