@@ -1,0 +1,125 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-kids-config
+  namespace: dns-system
+data:
+  Corefile: |
+    .:53 {        hosts /etc/coredns/blocklist.hosts {
+            fallthrough
+        }
+        forward . 10.96.185.235
+        cache 3600
+        errors
+        log
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-kids-blocklist-downloader
+  namespace: dns-system
+data:
+  download.sh: |
+    #!/bin/sh
+    set -e
+    apk add --no-cache curl
+    echo "Downloading kid-safe blocklist (fakenews + gambling + porn)..."
+    curl -sL "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn/hosts" \
+      | grep -E '^0\.0\.0\.0|^127\.0\.0\.1' \
+      | grep -v -E '^#|localhost|broadcasthost|local$' \
+      | awk '{print "0.0.0.0", $2}' \
+      | sort -u \
+      > /blocklists/blocklist.hosts
+    
+    ENTRIES=$(wc -l < /blocklists/blocklist.hosts)
+    echo "Downloaded $ENTRIES blocked domains for kid devices"
+    echo "Sample entries:"
+    head -5 /blocklists/blocklist.hosts
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coredns-kids
+  namespace: dns-system
+  labels:
+    app: coredns-kids
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: coredns-kids
+  template:
+    metadata:
+      labels:
+        app: coredns-kids
+    spec:
+      initContainers:
+      - name: download-blocklist
+        image: alpine:latest
+        command: ["/bin/sh", "/scripts/download.sh"]
+        volumeMounts:
+        - name: blocklists
+          mountPath: /blocklists
+        - name: downloader
+          mountPath: /scripts
+      containers:
+      - name: coredns
+        image: coredns/coredns:1.11.1
+        args:
+        - -conf
+        - /etc/coredns/Corefile
+        ports:
+        - containerPort: 53
+          name: dns-udp
+          protocol: UDP
+        - containerPort: 53
+          name: dns-tcp
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/coredns/Corefile
+          subPath: Corefile
+          readOnly: true
+        - name: blocklists
+          mountPath: /etc/coredns/blocklist.hosts
+          subPath: blocklist.hosts
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: coredns-kids-config
+      - name: blocklists
+        emptyDir: {}
+      - name: downloader
+        configMap:
+          name: coredns-kids-blocklist-downloader
+          defaultMode: 0755
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coredns-kids
+  namespace: dns-system
+  labels:
+    app: coredns-kids
+spec:
+  selector:
+    app: coredns-kids
+  ports:
+  - name: dns-tcp
+    port: 53
+    protocol: TCP
+    targetPort: 53
+  - name: dns-udp
+    port: 53
+    protocol: UDP
+    targetPort: 53
+  type: ClusterIP
