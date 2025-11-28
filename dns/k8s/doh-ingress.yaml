@@ -4,38 +4,34 @@ metadata:
   name: doh-ingress
   namespace: dns-system
   annotations:
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
-  ingressClassName: nginx
   rules:
-  - host: doh.local.example.com  # Change this to your domain
+  - host: kids.xs4some.nl
     http:
       paths:
       - path: /dns-query
         pathType: Prefix
         backend:
           service:
-            name: doh-server
+            name: doh-server-kids
             port:
               number: 443
----
-# Alternative: NodePort service for direct access without Ingress
-apiVersion: v1
-kind: Service
-metadata:
-  name: doh-server-nodeport
-  namespace: dns-system
-  labels:
-    app: doh-server
-spec:
-  selector:
-    app: doh-server
-  ports:
-  - name: doh
-    port: 443
-    targetPort: 8053
-    nodePort: 30053
-    protocol: TCP
-  type: NodePort
+  - host: dns.xs4some.nl
+    http:
+      paths:
+      - path: /dns-query
+        pathType: Prefix
+        backend:
+          service:
+            name: doh-server-standard
+            port:
+              number: 443
+  tls:
+  - hosts:
+    - kids.xs4some.nl
+    secretName: doh-kids-tls
+  - hosts:
+    - dns.xs4some.nl
+    secretName: doh-adults-tls
