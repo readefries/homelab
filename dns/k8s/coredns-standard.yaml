@@ -38,6 +38,17 @@ data:
     echo "Sample entries:"
     head -5 /blocklists/blocklist.hosts
 ---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: coredns-standard-pdb
+  namespace: dns-system
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: coredns-standard
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -47,6 +58,11 @@ metadata:
     app: coredns-standard
 spec:
   replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
   selector:
     matchLabels:
       app: coredns-standard
