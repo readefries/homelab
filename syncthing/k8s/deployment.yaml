@@ -1,0 +1,145 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: syncthing
+  namespace: syncthing
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: syncthing
+  template:
+    metadata:
+      labels:
+        app: syncthing
+    spec:
+      dnsPolicy: None
+      dnsConfig:
+        nameservers:
+          - 1.1.1.1
+          - 10.43.0.10
+        searches:
+          - syncthing.svc.cluster.local
+          - svc.cluster.local
+          - cluster.local
+        options:
+          - name: ndots
+            value: "5"
+      initContainers:
+      - name: setup-filen
+        image: ghcr.io/readefries/syncthing:latest
+        imagePullPolicy: Never
+        command:
+        - sh
+        - -c
+        - |
+          mkdir -p /filen-config-rw
+          cp /filen-config-ro/syncPairs.json /filen-config-rw/syncPairs.json
+          cp /filen-auth-ro/.filen-cli-auth-config /filen-config-rw/.filen-cli-auth-config
+          chmod 600 /filen-config-rw/.filen-cli-auth-config
+          ls -la /filen-config-rw/
+        volumeMounts:
+        - name: filen-config
+          mountPath: /filen-config-ro
+          readOnly: true
+        - name: filen-auth
+          mountPath: /filen-auth-ro
+          readOnly: true
+        - name: filen-config-rw
+          mountPath: /filen-config-rw
+      containers:
+      - name: syncthing
+        image: ghcr.io/readefries/syncthing:latest
+        imagePullPolicy: Never
+        command:
+        - sh
+        - -c
+        - |
+          mkdir -p /etc/periodic/15min
+          cat > /etc/periodic/15min/sync-filen << 'EOF'
+          #!/bin/sh
+          filen sync
+          EOF
+          chmod +x /etc/periodic/15min/sync-filen
+          crond
+          exec syncthing
+        ports:
+        - containerPort: 8384
+          name: web
+        - containerPort: 22000
+          name: sync-tcp
+          protocol: TCP
+        - containerPort: 22000
+          name: sync-udp
+          protocol: UDP
+        - containerPort: 21027
+          name: discovery
+          protocol: UDP
+        env:
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        - name: STGUIADDRESS
+          value: "0.0.0.0:8384"
+        - name: PATH
+          value: "/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin"
+        volumeMounts:
+        - name: config
+          mountPath: /var/syncthing
+        - name: filen-config-rw
+          mountPath: /root/.config/filen-cli
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8384
+          initialDelaySeconds: 30
+          periodSeconds: 60
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: syncthing-config
+      - name: filen-config
+        configMap:
+          name: filen-config
+      - name: filen-auth
+        secret:
+          secretName: filen-auth
+          defaultMode: 0600
+      - name: filen-config-rw
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: syncthing
+  namespace: syncthing
+spec:
+  type: ClusterIP
+  selector:
+    app: syncthing
+  ports:
+  - name: web
+    port: 8384
+    targetPort: 8384
+  - name: sync-tcp
+    port: 22000
+    targetPort: 22000
+    protocol: TCP
+  - name: sync-udp
+    port: 22000
+    targetPort: 22000
+    protocol: UDP
+  - name: discovery
+    port: 21027
+    targetPort: 21027
+    protocol: UDP

@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: filen-sync
+  namespace: syncthing
+spec:
+  schedule: "*/15 * * * *"  # Every 15 minutes
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: filen-sync
+            image: ghcr.io/readefries/syncthing:latest
+            imagePullPolicy: Never
+            command:
+            - sh
+            - -c
+            - "filen sync && echo 'Sync completed at $(date)'"
+            volumeMounts:
+            - name: data
+              mountPath: /var/syncthing/data
+            - name: filen-config
+              mountPath: /root/.config/filen-cli
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: syncthing-data
+          - name: filen-config
+            emptyDir: {}
+          initContainers:
+          - name: setup-filen
+            image: ghcr.io/readefries/syncthing:latest
+            imagePullPolicy: Never
+            command:
+            - sh
+            - -c
+            - |
+              mkdir -p /filen-config-rw
+              cp -rL /filen-config-ro/* /filen-config-rw/ || true
+              cp /filen-auth-ro/.filen-cli-auth-config /filen-config-rw/.filen-cli-auth-config
+              chmod 600 /filen-config-rw/.filen-cli-auth-config
+            volumeMounts:
+            - name: filen-config-cm
+              mountPath: /filen-config-ro
+              readOnly: true
+            - name: filen-auth
+              mountPath: /filen-auth-ro
+              readOnly: true
+            - name: filen-config
+              mountPath: /filen-config-rw
+          restartPolicy: OnFailure

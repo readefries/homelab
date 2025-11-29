@@ -1,0 +1,18 @@
+FROM alpine:latest
+
+RUN apk add --no-cache syncthing nodejs npm python3 make g++ && \
+    npm install -g @filen/cli && \
+    apk del python3 make g++ && \
+    mkdir -p /etc/periodic/15min && \
+    echo '#!/bin/sh' > /etc/periodic/15min/sync-filen && \
+    echo 'filen sync' >> /etc/periodic/15min/sync-filen && \
+    chmod +x /etc/periodic/15min/sync-filen
+
+ENV STGUIADDRESS=0.0.0.0:8384
+
+EXPOSE 8384 22000 21027/udp
+
+VOLUME ["/var/syncthing"]
+
+ENTRYPOINT ["syncthing"]
+CMD ["--home=/var/syncthing", "--no-browser", "--no-restart"]

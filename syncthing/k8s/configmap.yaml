@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filen-config
+  namespace: syncthing
+data:
+  syncPairs.json: |
+    [
+      {
+        "local": "/root/Sync/",
+        "remote": "Documents",
+        "syncMode": "twoWay"
+      }
+    ]

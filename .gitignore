@@ -1,1 +1,5 @@
 transmission
+
+# Syncthing secrets
+syncthing/k8s/secret.yaml
+syncthing/k8s/.filen-auth-original.txt
