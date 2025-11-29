@@ -50,40 +50,33 @@ kubectl logs -n traefik -l app=traefik
 - **HTTPS**: https://YOUR_SERVER_IP:30443
 - **Dashboard**: https://traefik.yourdomain.com (after configuring ingress)
 
-## Example: Exposing a Service
+## Exposing Services
 
-Create an Ingress for your service:
+Traefik can route to any service - Kubernetes pods, external VMs, or other hosts.
 
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: my-service
-  namespace: my-namespace
-  annotations:
-    kubernetes.io/ingress.class: traefik
-spec:
-  rules:
-  - host: myapp.yourdomain.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: my-service
-            port:
-              number: 80
-  tls:
-  - hosts:
-    - myapp.yourdomain.com
-    secretName: myapp-tls
+### Directory Structure
+
+```
+traefik/
+├── k8s/              # Core Traefik installation
+└── hosts/            # Individual service configurations
+    ├── example.yaml  # Template for new services
+    └── README.md     # Examples and documentation
 ```
 
+### Adding a New Service
+
+1. Create a new YAML file in `hosts/` directory
+2. Define Service + Endpoints (for VMs) or just Ingress (for K8s services)
+3. Apply: `kubectl apply -f hosts/your-service.yaml`
+
 Traefik will automatically:
-1. Obtain a Let's Encrypt SSL certificate
-2. Route traffic to your service
-3. Redirect HTTP to HTTPS
+1. Detect the new Ingress
+2. Obtain a Let's Encrypt SSL certificate
+3. Route traffic to your service
+4. Redirect HTTP to HTTPS
+
+See `hosts/README.md` for examples of routing to VMs, containers, and external services.
 
 ## Port Forwarding
 

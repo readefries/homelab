@@ -11,7 +11,7 @@ data:
     
     api:
       dashboard: true
-      insecure: false
+      insecure: true
     
     log:
       level: INFO
@@ -39,6 +39,7 @@ data:
         acme:
           email: readefries@xs4some.nl
           storage: /data/acme.json
-          tlsChallenge: {}
+          httpChallenge:
+            entryPoint: web
           # For Let's Encrypt staging (testing):
           # caServer: https://acme-staging-v02.api.letsencrypt.org/directory
