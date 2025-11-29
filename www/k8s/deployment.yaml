@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: localhost/website:latest
-        imagePullPolicy: Never
+        image: ghcr.io/readefries/static-page/staticpage:latest
+        imagePullPolicy: Always
         securityContext:
           appArmorProfile:
             type: Unconfined
