@@ -24,7 +24,7 @@ spec:
           protocol: TCP
         env:
         - name: UPSTREAM_DNS_SERVER
-          value: "udp:coredns-standard.dns-system.svc.cluster.local:53"
+          value: "udp:10.43.47.252:53"
         - name: DOH_HTTP_PREFIX
           value: "/dns-query"
         - name: DOH_SERVER_LISTEN
