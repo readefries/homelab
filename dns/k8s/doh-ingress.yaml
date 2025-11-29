@@ -1,35 +1,38 @@
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+# DoH Ingress using Traefik IngressRoute CRDs
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
 metadata:
-  name: doh-ingress
+  name: doh-kids
   namespace: dns-system
-  annotations:
-    kubernetes.io/ingress.class: traefik
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
 spec:
-  rules:
-  - host: kids.xs4some.nl
-    http:
-      paths:
-      - path: /dns-query
-        pathType: Prefix
-        backend:
-          service:
-            name: doh-server-kids
-            port:
-              number: 443
-  - host: dns.xs4some.nl
-    http:
-      paths:
-      - path: /dns-query
-        pathType: Prefix
-        backend:
-          service:
-            name: doh-server-standard
-            port:
-              number: 443
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`kids.xs4some.nl`) && PathPrefix(`/dns-query`)
+      kind: Rule
+      services:
+        - name: doh-server-kids
+          port: 443
+          scheme: http
   tls:
-  - hosts:
-    - kids.xs4some.nl
-    - dns.xs4some.nl
+    certResolver: letsencrypt
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: doh-standard
+  namespace: dns-system
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`dns.xs4some.nl`) && PathPrefix(`/dns-query`)
+      kind: Rule
+      services:
+        - name: doh-server-standard
+          port: 443
+          scheme: http
+  tls:
+    certResolver: letsencrypt
