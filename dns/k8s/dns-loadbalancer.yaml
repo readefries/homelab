@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: coredns-kids-lb
+  namespace: dns-system
+  annotations:
+    metallb.universe.tf/address-pool: default-pool
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 172.16.3.0
+  selector:
+    app: coredns-kids
+  ports:
+  - name: dns-udp
+    protocol: UDP
+    port: 53
+    targetPort: 53
+  - name: dns-tcp
+    protocol: TCP
+    port: 53
+    targetPort: 53
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coredns-standard-lb
+  namespace: dns-system
+  annotations:
+    metallb.universe.tf/address-pool: default-pool
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 172.16.3.2
+  selector:
+    app: coredns-standard
+  ports:
+  - name: dns-udp
+    protocol: UDP
+    port: 53
+    targetPort: 53
+  - name: dns-tcp
+    protocol: TCP
+    port: 53
+    targetPort: 53

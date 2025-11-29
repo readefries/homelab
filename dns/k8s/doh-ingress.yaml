@@ -6,6 +6,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: traefik
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
 spec:
   rules:
   - host: kids.xs4some.nl
@@ -31,7 +32,4 @@ spec:
   tls:
   - hosts:
     - kids.xs4some.nl
-    secretName: doh-kids-tls
-  - hosts:
     - dns.xs4some.nl
-    secretName: doh-adults-tls
