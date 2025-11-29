@@ -1,0 +1,11 @@
+FROM docker.io/library/nginx:alpine
+
+RUN apk add --no-cache git
+
+RUN rm -rf /usr/share/nginx/html/* && \
+    git clone https://github.com/readefries/static-page /usr/share/nginx/html/
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80

@@ -1,0 +1,53 @@
+# Website IngressRoutes
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: website-xs4some
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`xs4some.nl`) || Host(`www.xs4some.nl`)
+      kind: Rule
+      services:
+        - name: website
+          port: 80
+  tls:
+    certResolver: letsencrypt
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: website-readefries
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`readefries.nl`) || Host(`www.readefries.nl`)
+      kind: Rule
+      services:
+        - name: website
+          port: 80
+  tls:
+    certResolver: letsencrypt
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: website-de-readefries
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`de.readefries.nl`)
+      kind: Rule
+      services:
+        - name: website
+          port: 80
+  tls:
+    certResolver: letsencrypt

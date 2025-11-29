@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: website-nginx-config
+  namespace: default
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name _;
+        root /usr/share/nginx/html;
+        index index.html;
+
+        # Serve /fy folder for Frisian domains
+        location / {
+            if ($http_host ~* "^(de\.)?readefries\.nl$") {
+                rewrite ^(.*)$ /fy$1 break;
+            }
+            try_files $uri $uri/ =404;
+        }
+
+        # Fallback error page
+        error_page 404 /404.html;
+        location = /404.html {
+            internal;
+        }
+    }
