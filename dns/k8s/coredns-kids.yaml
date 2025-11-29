@@ -24,7 +24,6 @@ data:
   download.sh: |
     #!/bin/sh
     set -e
-    apk add --no-cache curl
     echo "Downloading kid-safe blocklist (fakenews + gambling + porn)..."
     curl -sL "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn/hosts" \
       | grep -E '^0\.0\.0\.0|^127\.0\.0\.1' \
@@ -33,8 +32,19 @@ data:
       | sort -u \
       > /blocklists/blocklist.hosts
     
+    echo "Adding YouTube domains to blocklist..."
+    echo "0.0.0.0 youtube.com" >> /blocklists/blocklist.hosts
+    echo "0.0.0.0 www.youtube.com" >> /blocklists/blocklist.hosts
+    echo "0.0.0.0 m.youtube.com" >> /blocklists/blocklist.hosts
+    echo "0.0.0.0 youtu.be" >> /blocklists/blocklist.hosts
+    echo "0.0.0.0 www.youtu.be" >> /blocklists/blocklist.hosts
+    echo "0.0.0.0 youtubei.googleapis.com" >> /blocklists/blocklist.hosts
+    echo "0.0.0.0 youtube.googleapis.com" >> /blocklists/blocklist.hosts
+    echo "0.0.0.0 www.youtube-nocookie.com" >> /blocklists/blocklist.hosts
+    echo "0.0.0.0 youtube-nocookie.com" >> /blocklists/blocklist.hosts
+    
     ENTRIES=$(wc -l < /blocklists/blocklist.hosts)
-    echo "Downloaded $ENTRIES blocked domains for kid devices"
+    echo "Downloaded $ENTRIES blocked domains for kid devices (including YouTube)"
     echo "Sample entries:"
     head -5 /blocklists/blocklist.hosts
 ---
@@ -57,7 +67,7 @@ spec:
     spec:
       initContainers:
       - name: download-blocklist
-        image: alpine:latest
+        image: curlimages/curl:latest
         command: ["/bin/sh", "/scripts/download.sh"]
         volumeMounts:
         - name: blocklists
