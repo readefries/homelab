@@ -1,0 +1,18 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-dashboard
+  namespace: traefik
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`traefik.xs4some.nl`)
+      middlewares:
+        - name: ip-whitelist
+      services:
+        - name: traefik-dashboard
+          port: 8080
+  tls:
+    certResolver: letsencrypt
