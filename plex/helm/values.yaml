@@ -18,7 +18,9 @@ hostNetwork: true
 podAnnotations:
   container.apparmor.security.beta.kubernetes.io/plex: unconfined
 
-podSecurityContext: {}
+podSecurityContext:
+  # Set fsGroup so mounted volumes get group ownership for the Plex user (GID 1000)
+  fsGroup: 1000
 
 securityContext:
   # start as root so s6 can drop privileges; Plex will run as PLEX_UID/PLEX_GID
@@ -86,6 +88,15 @@ extraVolumeMounts:
 # Node / pod tolerations, affinities can be added here if needed
 affinity: {}
 tolerations: []
+
+# Optional: if you want the chart to perform chown on hostPath volumes at
+# startup you can add an initContainer here that runs as root and chowns the
+# mounted paths. Many clusters avoid this for security reasons; prefer setting
+# ownership on the host where possible.
+#initContainers:
+#  - name: fix-perms
+#    image: busybox
+#    command: ["sh","-c","chown -R 1000:1000 /config /transcode /media/movies /media/series /media/music || true"]
 
 # If AppArmor prevents s6 from performing operations, you can try to add this annotation
 # podAnnotations:

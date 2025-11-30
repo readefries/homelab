@@ -130,6 +130,9 @@ Troubleshooting checklist
   - You have `hostPort: 32400` and more than one replica — set `replicas: 1`.
 
 - File ownership issues: ensure host directories for `config` and `transcode` are owned by the same UID/GID Plex uses (we used `PLEX_UID=1000` / `PLEX_GID=1000` and ran `chown -R 1000:1000 /srv/plex/config /srv/plex/transcode`).
+ - File ownership issues: ensure host directories for `config` and `transcode` are owned by the same UID/GID Plex uses (we used `PLEX_UID=1000` / `PLEX_GID=1000` and ran `chown -R 1000:1000 /srv/plex/config /srv/plex/transcode`).
+  - To make ownership more robust in the Deployment, set `podSecurityContext.fsGroup: 1000` in your Helm values so mounted volumes are assigned group ownership inside the pod.
+  - Optionally (less recommended): add an `initContainer` that runs a `chown -R 1000:1000` on mounted hostPath directories during startup. This requires running an init container as root and may be disallowed in strict environments.
 
 Notes and recommendations
 -------------------------
@@ -146,6 +149,25 @@ Checklist for next migration
  - [ ] Copy `values.yaml` to host and run Helm install/upgrade.
  - [ ] Ensure only one replica if using `hostPort`.
  - [ ] If s6 errors appear: apply `appArmorProfile` or annotation then recreate pods.
+
+Persisting configuration between redeploys
+----------------------------------------
+- To ensure Plex `config` and `transcode` survive redeploys, create PersistentVolumes and PersistentVolumeClaims that bind to the host paths before installing the chart.
+- Files added in this repo:
+  - `plex/k8s/pv-plex-config.yaml` (PersistentVolume for `/srv/plex/config`)
+  - `plex/k8s/pvc-plex-config.yaml` (PersistentVolumeClaim in `plex` ns)
+  - `plex/k8s/pv-pvc-plex-transcode.yaml` (PV + PVC for `/srv/plex/transcode`)
+
+Apply them on the host before upgrading/installing the chart:
+
+```bash
+kubectl apply -f plex/k8s/pv-plex-config.yaml
+kubectl apply -f plex/k8s/pvc-plex-config.yaml
+kubectl apply -f plex/k8s/pv-pvc-plex-transcode.yaml
+```
+
+When the PVCs exist the chart can be configured to use them (update `plex/helm/values.yaml` to use PVC-backed volumes or leave the helm defaults if the chart detects PVCs).
+
 
 File: `plex/helm/values.yaml` (kept in this repo) is the source-of-truth for how the chart is configured.
 

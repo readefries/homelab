@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plex
+  namespace: plex
+  labels:
+    app: plex
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plex
+  template:
+    metadata:
+      labels:
+        app: plex
+    spec:
+      hostNetwork: true
+      dnsPolicy: Default
+      containers:
+      - name: plex
+        image: plexinc/pms-docker:plexpass
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: TZ
+          value: Europe/Amsterdam
+        - name: PLEX_CLAIM
+          value: ""
+        - name: PLEX_UID
+          value: "1000"
+        - name: PLEX_GID
+          value: "1000"
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: transcode
+          mountPath: /transcode
+        - name: media-movies
+          mountPath: /media/movies
+          readOnly: false
+        - name: media-series
+          mountPath: /media/series
+          readOnly: false
+        - name: media-music
+          mountPath: /media/music
+          readOnly: false
+        resources:
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+        # Let the container start as root so the s6 init system can drop
+        # privileges itself using its setuid helper. Running the container
+        # as non-root was preventing /usr/bin/s6-setuidgid from executing.
+        ports:
+        - containerPort: 32400
+          hostPort: 32400
+          name: http
+          protocol: TCP
+      volumes:
+      - name: config
+        hostPath:
+          path: /srv/plex/config
+          type: DirectoryOrCreate
+      - name: transcode
+        hostPath:
+          path: /srv/plex/transcode
+          type: DirectoryOrCreate
+      - name: media-movies
+        hostPath:
+          path: /Media/Movies
+          type: Directory
+      - name: media-series
+        hostPath:
+          path: /Media/Series
+          type: Directory
+      - name: media-music
+        hostPath:
+          path: /Media/Music
+          type: Directory
+      - name: dri
+        hostPath:
+          path: /dev/dri
+          type: Directory
