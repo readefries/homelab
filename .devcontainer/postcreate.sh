@@ -2,6 +2,13 @@
 
 set -euo pipefail
 
+# Install Oh My Bash
+if [ ! -d "$HOME/.oh-my-bash" ]; then
+    echo "Installing Oh My Bash..."
+
+    git clone --depth=1 https://github.com/ohmybash/oh-my-bash.git "$HOME/.oh-my-bash"
+fi
+
 # Install Podman if not already installed
 echo "Installing Podman..."
 if ! command -v podman &> /dev/null; then

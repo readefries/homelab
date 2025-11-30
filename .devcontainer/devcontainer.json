@@ -4,8 +4,8 @@
   
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {
-      "configureZshAsDefaultShell": true,
-      "installOhMyZsh": true,
+      "configureZshAsDefaultShell": false,
+      "installOhMyZsh": false,
       "upgradePackages": true,
       "username": "vscode",
       "userUid": "1000",
@@ -33,8 +33,10 @@
   },
 
   "mounts": [
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.bashrc,target=/home/vscode/.bashrc,type=bind,consistency=cached",
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,consistency=cached",
     "source=${localEnv:HOME}${localEnv:USERPROFILE}/.kube,target=/home/vscode/.kube,type=bind,consistency=cached",
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached",
     "source=/run/user/1000/podman/podman.sock,target=/run/podman/podman.sock,type=bind"
   ],
 
