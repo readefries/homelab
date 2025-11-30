@@ -1,0 +1,121 @@
+## Sample values.yaml for plexinc/pms-docker Helm chart
+## Notes:
+## - This is a suggested set of overrides for running Plex on the host network with
+##   hostPath mounts for config/transcode and media mounts (read-write or read-only
+##   depending on your setup).
+## - The exact keys accepted depend on the chart version. Use `helm show values plexinc/pms-docker`
+##   (or inspect the chart) to adapt fields if needed.
+
+image:
+  repository: plexinc/pms-docker
+  tag: plexpass
+  pullPolicy: IfNotPresent
+
+# Run the pod on the host network so Plex can bind to host ports directly
+hostNetwork: true
+
+# If AppArmor prevents s6 from performing operations, unconfine this pod
+podAnnotations:
+  container.apparmor.security.beta.kubernetes.io/plex: unconfined
+
+podSecurityContext: {}
+
+securityContext:
+  # start as root so s6 can drop privileges; Plex will run as PLEX_UID/PLEX_GID
+  runAsUser: 0
+  runAsGroup: 0
+  allowPrivilegeEscalation: true
+
+service:
+  enabled: false
+
+container:
+  env:
+    - name: TZ
+      value: Europe/Amsterdam
+    - name: PLEX_CLAIM
+      value: "claim-AFAPPcGM9N9zrNXNKdxB"
+    - name: PLEX_UID
+      value: "1000"
+    - name: PLEX_GID
+      value: "1000"
+
+  ports: []
+
+# Extra volume mounts and volumes passed into the container
+extraVolumes:
+  - name: config
+    hostPath:
+      path: /srv/plex/config
+      type: DirectoryOrCreate
+  - name: transcode
+    hostPath:
+      path: /srv/plex/transcode
+      type: DirectoryOrCreate
+  - name: media-movies
+    hostPath:
+      path: /Media/Movies
+      type: Directory
+  - name: media-series
+    hostPath:
+      path: /Media/Series
+      type: Directory
+  - name: media-music
+    hostPath:
+      path: /Media/Music
+      type: Directory
+  - name: dri
+    hostPath:
+      path: /dev/dri
+      type: Directory
+
+extraVolumeMounts:
+  - name: config
+    mountPath: /config
+  - name: transcode
+    mountPath: /transcode
+  - name: media-movies
+    mountPath: /media/movies
+  - name: media-series
+    mountPath: /media/series
+  - name: media-music
+    mountPath: /media/music
+  - name: dri
+    mountPath: /dev/dri
+
+# Node / pod tolerations, affinities can be added here if needed
+affinity: {}
+tolerations: []
+
+# If AppArmor prevents s6 from performing operations, you can try to add this annotation
+# podAnnotations:
+#   container.apparmor.security.beta.kubernetes.io/plex: unconfined
+
+# Kubernetes v1.30+ deprecates the AppArmor annotations in favor of the
+# `appArmorProfile` fields inside the Pod and Container securityContext.
+# Use the fields below when your cluster API supports them (recommended):
+#
+# podSecurityContext:
+#   appArmorProfile:
+#     type: Localhost
+#     localhostProfile: unconfined
+#
+# container-level (example placed under the container's `securityContext`):
+# container:
+#   securityContext:
+#     appArmorProfile:
+#       type: Localhost
+#       localhostProfile: unconfined
+#
+# If your cluster is older and does not support `appArmorProfile` yet, keep the
+# annotation above. The deprecation warning can appear even when the cluster
+# doesn't support the new fields; in that case the annotation is the only
+# practical workaround until you upgrade Kubernetes.
+
+resources:
+  limits:
+    cpu: "1"
+    memory: "1Gi"
+  requests:
+    cpu: "200m"
+    memory: "256Mi"
