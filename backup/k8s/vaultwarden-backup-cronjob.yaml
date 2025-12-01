@@ -37,12 +37,12 @@ spec:
             - name: ALERT_WEBHOOK
               valueFrom:
                 secretKeyRef:
-                  name: backup-alert
-                  key: webhook
+                  name: gotify-backup-alert
+                  key: webhook-url
             - name: ALERT_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: backup-alert
+                  name: gotify-backup-alert
                   key: token
             volumeMounts:
             - name: data

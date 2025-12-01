@@ -11,9 +11,11 @@ ALERT_TOKEN=${ALERT_TOKEN:-}
 alert_fail() {
   local msg="$1"
   if [ -n "${ALERT_WEBHOOK}" ]; then
-    payload=$(jq -n --arg svc "backup-runner" --arg msg "$msg" --arg target "$FILEN_DEST" '{service:$svc,message:$msg,target:$target,timestamp:now}')
+    # Format for Gotify API: {"title":"...", "message":"...", "priority":N}
+    payload=$(jq -n --arg title "Backup Failed: ${FILEN_DEST}" --arg msg "$msg" '{title:$title,message:$msg,priority:8}')
     if [ -n "${ALERT_TOKEN}" ]; then
-      curl -sS -X POST -H "Content-Type: application/json" -H "Authorization: Bearer ${ALERT_TOKEN}" -d "${payload}" "${ALERT_WEBHOOK}" || true
+      # Gotify uses token as query param
+      curl -sS -X POST -H "Content-Type: application/json" "${ALERT_WEBHOOK}?token=${ALERT_TOKEN}" -d "${payload}" || true
     else
       curl -sS -X POST -H "Content-Type: application/json" -d "${payload}" "${ALERT_WEBHOOK}" || true
     fi
