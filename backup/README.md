@@ -44,3 +44,26 @@ Environment variables:
 - `PRUNE_DRY_RUN` - set to `1` to test pruning without deleting
 
 Note: Ubuntu 24.04 base is required for glibc 2.39 compatibility with the latest Filen CLI and its dependencies.
+
+## Restore and Testing
+
+See [RESTORE.md](RESTORE.md) for comprehensive restore procedures and testing.
+
+Quick test:
+```bash
+# Test that backups can be restored
+./test-restore.sh vaultwarden /backups/vaultwarden/
+
+# Restore to a copy PVC for safe verification (recommended)
+./restore-to-copy.sh vaultwarden /backups/vaultwarden/backup-20251201-030000.tar.gz
+
+# Or manually via kubectl
+kubectl -n vaultwarden create job vaultwarden-restore-test \
+  --from=cronjob/vaultwarden-backup -- /bin/bash -c "filen list /backups/vaultwarden/"
+```
+
+The `restore-to-copy.sh` script will:
+1. Create a temporary PVC
+2. Restore the backup to it
+3. Create a verification pod for you to inspect the data
+4. Provide commands to copy to production if data looks good
