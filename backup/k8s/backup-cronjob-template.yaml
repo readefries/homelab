@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: BACKUP_NAME_PLACEHOLDER
+  namespace: NAMESPACE_PLACEHOLDER
+spec:
+  schedule: "CRON_SCHEDULE_PLACEHOLDER"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: PVC_NAME_PLACEHOLDER
+          - name: filen-auth
+            secret:
+              secretName: filen-auth
+          containers:
+          - name: backup-runner
+            image: REPOSITORY_PLACEHOLDER/backup-runner-filen:latest
+            env:
+            - name: TARGET_DIR
+              value: "/data"
+            - name: FILEN_DEST
+              value: "FILEN_DEST_PLACEHOLDER"
+            - name: RETENTION_DAYS
+              value: "30"
+            volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: filen-auth
+              mountPath: /root/.config/filen-cli
+              readOnly: true
+          # Service account / RBAC can be added if needed

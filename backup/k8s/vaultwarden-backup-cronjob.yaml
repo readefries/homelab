@@ -1,0 +1,53 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vaultwarden-backup
+  namespace: vaultwarden
+spec:
+  schedule: "0 3 * * *" # daily at 03:00
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 3600
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: Never
+          # If your GHCR image is private, add the imagePullSecrets entry below
+          imagePullSecrets:
+          - name: ghcr-creds
+          containers:
+          - name: backup
+            image: ghcr.io/readefries/backup-runner-filen:latest
+            imagePullPolicy: Always
+            env:
+            - name: TARGET_DIR
+              value: "/data"
+            - name: FILEN_DEST
+              value: "/backups/vaultwarden/"
+            - name: RETENTION_DAYS
+              value: "30"
+            - name: FILEN_AUTH_CONFIG
+              valueFrom:
+                secretKeyRef:
+                  name: filen-auth
+                  key: .filen-cli-auth-config
+            - name: ALERT_WEBHOOK
+              valueFrom:
+                secretKeyRef:
+                  name: backup-alert
+                  key: webhook
+            - name: ALERT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: backup-alert
+                  key: token
+            volumeMounts:
+            - name: data
+              mountPath: /data
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: vaultwarden-data

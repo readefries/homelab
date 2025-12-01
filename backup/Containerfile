@@ -1,0 +1,61 @@
+FROM ubuntu:24.04
+LABEL maintainer="readefries@xs4some.nl"
+
+# Ensure npm builds native modules from source by default inside the image
+ENV npm_config_build_from_source=true
+ENV npm_config_update_binaries=false
+ENV NPM_CONFIG_PREFIX=/usr/local
+ENV PATH=/usr/local/bin:$PATH
+
+# Install runtime deps and Node (for @filen/cli)
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    ca-certificates curl gnupg jq python3 python3-dev tar bash procps \
+    build-essential pkg-config libssl-dev && \
+    # Install Node.js 20 LTS (compatible with Debian 12 glibc) via NodeSource
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nodejs && \
+    # install global npm packages under /usr/local (via NPM_CONFIG_PREFIX)
+    npm set progress=false && \
+    # install Filen CLI with all dependencies (newer versions require @jupiterpi/node-keyring)
+    npm i -g --unsafe-perm @filen/cli@latest --no-audit --no-fund && \
+    # explicitly install the missing keyring dependency
+    npm i -g --unsafe-perm @jupiterpi/node-keyring --no-audit --no-fund && \
+    # ensure filen binary exists (fail build if not)
+    test -x /usr/local/bin/filen || (echo "ERROR: filen binary missing after npm install" >&2; exit 1) && \
+    # Ensure there is a working /usr/local/bin/filen. Some npm installs create
+    # self-referential symlinks on some systems; prefer a wrapper that execs
+    # the resolved CLI entrypoint so native bindings get loaded correctly.
+    # remove any preexisting /usr/local or /usr/bin filen entries
+    rm -f /usr/local/bin/filen /usr/bin/filen || true && \
+    # determine npm global root and inspect the installed @filen/cli package.json
+    ROOTDIR="$(npm root -g 2>/dev/null || true)" && \
+    FILEN_PATH=""; \
+    if [ -f "$ROOTDIR/@filen/cli/package.json" ]; then \
+        FILEN_PATH="$(node -e 'const p=require("path"); const root=process.argv[1]; try{const pkg=require(p.join(root, "@filen/cli", "package.json")); let bin=p.join(root, "@filen/cli", typeof pkg.bin==="string"?pkg.bin:(pkg.bin&& (pkg.bin.filen||Object.values(pkg.bin)[0]))); console.log(bin);}catch(e){}' "$ROOTDIR" 2>/dev/null || true)"; \
+    fi && \
+    # if not found via package.json, look in common locations as a fallback
+    if [ -z "$FILEN_PATH" ]; then \
+        for CAND in "$ROOTDIR/@filen/cli/bin/filen" "$ROOTDIR/@filen/cli/bin/filen.js" /usr/lib/node_modules/@filen/cli/bin/filen /usr/lib/node_modules/@filen/cli/bin/filen.js /usr/local/lib/node_modules/@filen/cli/bin/filen /usr/local/lib/node_modules/@filen/cli/bin/filen.js; do \
+            if [ -f "$CAND" ]; then FILEN_PATH="$CAND"; break; fi; \
+        done; \
+    fi && \
+    if [ -n "$FILEN_PATH" ] && [ -f "$FILEN_PATH" ]; then \
+        printf '%s\n' '#!/bin/sh' "exec node '$FILEN_PATH' \"\$@\"" > /usr/local/bin/filen; \
+        chmod +x /usr/local/bin/filen; ln -sf /usr/local/bin/filen /usr/bin/filen || true; \
+    else \
+        echo "ERROR: filen CLI could not be resolved after npm install" >&2; \
+        echo "npm root -g: $ROOTDIR" >&2; ls -la "$ROOTDIR" 2>/dev/null || true; \
+        echo "ls /usr/lib/node_modules:@filen:" >&2; ls -la /usr/lib/node_modules/@filen 2>/dev/null || true; \
+        echo "ls /usr/local/lib/node_modules:@filen:" >&2; ls -la /usr/local/lib/node_modules/@filen 2>/dev/null || true; \
+        exit 1; \
+    fi && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY backup-runner.sh /app/backup-runner.sh
+RUN chmod +x /app/backup-runner.sh
+COPY checkdates.py /app/checkdates.py
+RUN chmod +x /app/checkdates.py
+
+# Image runs as root by default so a k8s Secret can be mounted into /root/.config/filen-cli
+ENTRYPOINT ["/app/backup-runner.sh"]
