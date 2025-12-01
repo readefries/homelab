@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: smokeping
+  namespace: smokeping
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - smokeping.xs4some.nl
+    secretName: smokeping-tls
+  rules:
+  - host: smokeping.xs4some.nl
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: smokeping
+            port:
+              number: 80
