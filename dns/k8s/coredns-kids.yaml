@@ -129,6 +129,7 @@ metadata:
 spec:
   selector:
     app: coredns-kids
+  clusterIP: 10.43.183.37
   ports:
   - name: dns-tcp
     port: 53

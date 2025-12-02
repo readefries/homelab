@@ -129,6 +129,7 @@ metadata:
 spec:
   selector:
     app: coredns-standard
+  clusterIP: 10.43.138.67
   ports:
   - name: dns-tcp
     port: 53
