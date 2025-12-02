@@ -1,0 +1,55 @@
+# Exposing Router via Traefik
+
+---
+# Service pointing to Router
+apiVersion: v1
+kind: Service
+metadata:
+  name: router
+  namespace: default
+spec:
+  ports:
+  - port: 443
+    name: https
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: router
+  namespace: default
+subsets:
+- addresses:
+  - ip: 172.16.3.254
+  ports:
+  - port: 443
+    name: https
+---
+# ServersTransport for HTTPS (skip cert verification for self-signed)
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: router-transport
+  namespace: default
+spec:
+  serverName: "172.16.3.254"
+  insecureSkipVerify: true
+---
+# IngressRoute
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: router
+  namespace: default
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`router.xs4some.nl`)
+      kind: Rule
+      services:
+        - name: router
+          port: 443
+          scheme: https
+          serversTransport: router-transport
+  tls:
+    certResolver: letsencrypt
