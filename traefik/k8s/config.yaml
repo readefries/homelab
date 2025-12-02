@@ -39,6 +39,18 @@ data:
         acme:
           email: readefries@xs4some.nl
           storage: /data/acme.json
+          dnsChallenge:
+            provider: cloudns
+            resolvers:
+            - 86.54.11.100:53
+            - 9.9.9.9:53
+            delayBeforeCheck: 60s
+          # For Let's Encrypt staging (testing):
+          # caServer: https://acme-staging-v02.api.letsencrypt.org/directory
+      letsencrypt-http:
+        acme:
+          email: readefries@xs4some.nl
+          storage: /data/acme-http.json
           httpChallenge:
             entryPoint: web
           # For Let's Encrypt staging (testing):

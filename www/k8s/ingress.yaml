@@ -33,7 +33,7 @@ spec:
         - name: website
           port: 80
   tls:
-    certResolver: letsencrypt
+    certResolver: letsencrypt-http
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
@@ -50,4 +50,4 @@ spec:
         - name: website
           port: 80
   tls:
-    certResolver: letsencrypt
+    certResolver: letsencrypt-http

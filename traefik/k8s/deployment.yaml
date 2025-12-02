@@ -22,6 +22,17 @@ spec:
         image: traefik:v2.10
         args:
           - --configFile=/config/traefik.yaml
+        env:
+        - name: CLOUDNS_SUB_AUTH_ID
+          valueFrom:
+            secretKeyRef:
+              name: traefik-acme-cloudns
+              key: subauth-id
+        - name: CLOUDNS_AUTH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: traefik-acme-cloudns
+              key: subauth-password
         ports:
         - name: web
           containerPort: 80
