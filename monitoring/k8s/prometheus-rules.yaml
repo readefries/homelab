@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: monitoring
+data:
+  alerts.yml: |
+    groups:
+    - name: kubernetes
+      rules:
+      # Pod not ready for more than 5 minutes (excluding Job pods like backups)
+      - alert: PodNotReady
+        expr: |
+          kube_pod_status_ready{condition="true"} == 0
+          unless on(namespace, pod) kube_pod_owner{owner_kind="Job"}
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} not ready"
+          description: "Pod has been in a non-ready state for more than 5 minutes."
+
+      # Pod restarting frequently
+      - alert: PodRestartingFrequently
+        expr: increase(kube_pod_container_status_restarts_total[1h]) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} restarting frequently"
+          description: "Pod has restarted {{ $value }} times in the last hour."
+
+      # Deployment replicas mismatch
+      - alert: DeploymentReplicasMismatch
+        expr: kube_deployment_spec_replicas != kube_deployment_status_replicas_available
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} replicas mismatch"
+          description: "Deployment has {{ $value }} available replicas, expected {{ $labels.spec_replicas }}."
+
+      # Container waiting (CrashLoopBackOff, ImagePullBackOff, etc.)
+      - alert: ContainerWaiting
+        expr: kube_pod_container_status_waiting_reason{reason!="ContainerCreating"} > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.container }} in {{ $labels.namespace }}/{{ $labels.pod }} waiting"
+          description: "Container is waiting with reason: {{ $labels.reason }}"
+
+      # Node not ready
+      - alert: NodeNotReady
+        expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node {{ $labels.node }} not ready"
+          description: "Node has been in a non-ready state for more than 5 minutes."
+
+      # High pod memory usage
+      - alert: PodHighMemoryUsage
+        expr: (container_memory_usage_bytes / container_spec_memory_limit_bytes) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} high memory usage"
+          description: "Pod is using {{ $value | humanizePercentage }} of its memory limit."
+
+    - name: services
+      rules:
+      # Service has no endpoints (no pods backing it)
+      - alert: ServiceDown
+        expr: kube_endpoint_address_available == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.namespace }}/{{ $labels.endpoint }} has no endpoints"
+          description: "Service has no available endpoints - no pods are backing this service."
+
+      # Persistent Volume Claim pending
+      - alert: PVCPending
+        expr: kube_persistentvolumeclaim_status_phase{phase="Pending"} == 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PVC {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} pending"
+          description: "PersistentVolumeClaim has been pending for more than 5 minutes."
+
+    - name: certificates
+      rules:
+      # Certificate expiring soon (7 days)
+      - alert: CertificateExpiringSoon
+        expr: (traefik_tls_certs_not_after - time()) / 86400 < 7
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Certificate expiring soon"
+          description: "Certificate will expire in {{ $value | humanize }} days."
+
+    - name: dns
+      rules:
+      # DNS pod not ready
+      - alert: DNSPodNotReady
+        expr: kube_pod_status_ready{condition="true", namespace="dns-system"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "DNS pod {{ $labels.pod }} not ready"
+          description: "DNS pod has been in a non-ready state for more than 2 minutes."

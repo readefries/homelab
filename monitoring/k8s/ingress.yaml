@@ -1,0 +1,33 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: Host(`prometheus.xs4some.nl`)
+    kind: Rule
+    services:
+    - name: prometheus
+      port: 9090
+  tls:
+    certResolver: letsencrypt
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: alertmanager
+  namespace: monitoring
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - match: Host(`alertmanager.xs4some.nl`)
+    kind: Rule
+    services:
+    - name: alertmanager
+      port: 9093
+  tls:
+    certResolver: letsencrypt

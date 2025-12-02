@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: monitoring
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+
+    route:
+      receiver: 'gotify'
+      group_by: ['alertname', 'namespace']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      routes:
+      # Critical alerts: shorter repeat interval
+      - match:
+          severity: critical
+        receiver: 'gotify'
+        repeat_interval: 1h
+      # Warning alerts: longer repeat interval  
+      - match:
+          severity: warning
+        receiver: 'gotify'
+        repeat_interval: 4h
+
+    receivers:
+    - name: 'gotify'
+      webhook_configs:
+      - url: 'http://alertmanager-gotify:8080/alert'
+        send_resolved: true
+        http_config:
+          follow_redirects: true
+
+    # Inhibit rules to prevent notification spam
+    inhibit_rules:
+    # If a critical alert fires, inhibit warnings for the same alertname
+    - source_match:
+        severity: 'critical'
+      target_match:
+        severity: 'warning'
+      equal: ['alertname', 'namespace']
+
+    templates: []
