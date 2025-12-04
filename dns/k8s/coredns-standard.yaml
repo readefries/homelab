@@ -6,6 +6,7 @@ metadata:
 data:
   Corefile: |
     .:53 {
+        prometheus :9153
         hosts /etc/coredns/blocklist.hosts {
             fallthrough
         }
@@ -69,6 +70,10 @@ spec:
     metadata:
       labels:
         app: coredns-standard
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9153"
+        prometheus.io/path: "/metrics"
     spec:
       initContainers:
       - name: download-blocklist
@@ -91,6 +96,9 @@ spec:
           protocol: UDP
         - containerPort: 53
           name: dns-tcp
+          protocol: TCP
+        - containerPort: 9153
+          name: metrics
           protocol: TCP
         resources:
           requests:

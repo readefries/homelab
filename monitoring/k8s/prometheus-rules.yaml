@@ -115,3 +115,68 @@ data:
         annotations:
           summary: "DNS pod {{ $labels.pod }} not ready"
           description: "DNS pod has been in a non-ready state for more than 2 minutes."
+
+      # Unbound cache hit rate too low (should be > 50% after warmup)
+      - alert: UnboundCacheHitRateLow
+        expr: |
+          (
+            rate(unbound_response_time_seconds_bucket{le="0"}[5m]) /
+            rate(unbound_queries_total[5m])
+          ) < 0.3
+          and
+          rate(unbound_queries_total[5m]) > 0.1
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Unbound cache hit rate low"
+          description: "Unbound cache hit rate is {{ $value | humanizePercentage }}, expected > 30%."
+
+      # Unbound query latency high (p95 > 500ms)
+      - alert: UnboundHighLatency
+        expr: |
+          histogram_quantile(0.95, 
+            rate(unbound_response_time_seconds_bucket[5m])
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Unbound DNS query latency high"
+          description: "95th percentile DNS query latency is {{ $value | humanizeDuration }}."
+
+      # CoreDNS request latency high
+      - alert: CoreDNSHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            rate(coredns_dns_request_duration_seconds_bucket[5m])
+          ) > 0.25
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CoreDNS request latency high on {{ $labels.kubernetes_pod_name }}"
+          description: "95th percentile CoreDNS latency is {{ $value | humanizeDuration }}."
+
+      # CoreDNS cache hit rate (informational - tracked but no alert threshold)
+      # Use this for dashboard visibility
+      
+      # DNS forward errors (CoreDNS failing to reach Unbound)
+      - alert: CoreDNSForwardErrors
+        expr: rate(coredns_forward_responses_total{rcode="SERVFAIL"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CoreDNS forward errors on {{ $labels.kubernetes_pod_name }}"
+          description: "CoreDNS is returning SERVFAIL responses, indicating upstream resolution failures."
+
+      # Unbound recursion timeouts
+      - alert: UnboundRecursionTimeouts
+        expr: rate(unbound_query_recursion_time_seconds_bucket{le="+Inf"}[5m]) - rate(unbound_query_recursion_time_seconds_bucket{le="10"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Unbound experiencing recursion timeouts"
+          description: "Unbound has queries taking > 10 seconds to resolve, indicating upstream issues."

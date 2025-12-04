@@ -45,7 +45,7 @@ data:
         harden-algo-downgrade: yes
         
         # Root hints (query root servers directly)
-        root-hints: /etc/unbound/root.hints
+        root-hints: /opt/unbound/etc/unbound/root.hints
         
         # Logging (reduce for production)
         verbosity: 1
@@ -57,6 +57,11 @@ data:
         prefetch: yes
         prefetch-key: yes
         
+        # Extended statistics for monitoring
+        extended-statistics: yes
+        statistics-interval: 0
+        statistics-cumulative: no
+        
         # Private address ranges (don't return these from public DNS)
         private-address: 10.0.0.0/8
         private-address: 172.16.0.0/12
@@ -64,6 +69,12 @@ data:
         private-address: 169.254.0.0/16
         private-address: fd00::/8
         private-address: fe80::/10
+
+    remote-control:
+        control-enable: yes
+        control-interface: 127.0.0.1
+        control-port: 8953
+        control-use-cert: no
         
   root.hints: |
     ; Root hints file for Unbound
