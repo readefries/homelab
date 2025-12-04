@@ -19,11 +19,8 @@ data:
     entryPoints:
       web:
         address: ":80"
-        http:
-          redirections:
-            entryPoint:
-              to: websecure
-              scheme: https
+        # Note: Redirect is handled per-route, not globally
+        # This allows cert-manager ACME challenges to work
       websecure:
         address: ":443"
         http:

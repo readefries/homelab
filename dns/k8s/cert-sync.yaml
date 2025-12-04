@@ -1,0 +1,173 @@
+# CronJob to sync TLS certificates from Traefik's acme.json to Kubernetes secrets
+# This allows stunnel and other services to use Traefik-managed Let's Encrypt certs
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cert-sync
+  namespace: dns-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cert-sync
+  namespace: dns-system
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cert-sync
+  namespace: dns-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cert-sync
+subjects:
+  - kind: ServiceAccount
+    name: cert-sync
+    namespace: dns-system
+---
+# Also need access to read the Traefik PVC
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cert-sync-traefik
+  namespace: traefik
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cert-sync-traefik
+  namespace: traefik
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cert-sync-traefik
+subjects:
+  - kind: ServiceAccount
+    name: cert-sync
+    namespace: dns-system
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cert-sync-script
+  namespace: dns-system
+data:
+  sync-certs.sh: |
+    #!/bin/bash
+    set -e
+    
+    # Get the Traefik pod name
+    TRAEFIK_POD=$(kubectl get pods -n traefik -l app=traefik -o jsonpath='{.items[0].metadata.name}')
+    
+    if [ -z "$TRAEFIK_POD" ]; then
+      echo "ERROR: Could not find Traefik pod"
+      exit 1
+    fi
+    
+    echo "Found Traefik pod: $TRAEFIK_POD"
+    
+    # Get acme.json content
+    ACME_JSON=$(kubectl exec -n traefik "$TRAEFIK_POD" -- cat /data/acme.json 2>/dev/null)
+    
+    if [ -z "$ACME_JSON" ]; then
+      echo "ERROR: Could not read acme.json"
+      exit 1
+    fi
+    
+    # Function to extract and create secret for a domain
+    extract_cert() {
+      local domain=$1
+      local secret_name=$2
+      
+      echo "Extracting certificate for $domain..."
+      
+      # Extract certificate and key from acme.json
+      CERT=$(echo "$ACME_JSON" | jq -r --arg domain "$domain" \
+        '.letsencrypt.Certificates[] | select(.domain.main == $domain) | .certificate' | base64 -d)
+      KEY=$(echo "$ACME_JSON" | jq -r --arg domain "$domain" \
+        '.letsencrypt.Certificates[] | select(.domain.main == $domain) | .key' | base64 -d)
+      
+      if [ -z "$CERT" ] || [ -z "$KEY" ]; then
+        echo "WARNING: Certificate not found for $domain"
+        return 1
+      fi
+      
+      # Create or update the secret
+      kubectl create secret tls "$secret_name" \
+        --namespace=dns-system \
+        --cert=<(echo "$CERT") \
+        --key=<(echo "$KEY") \
+        --dry-run=client -o yaml | kubectl apply -f -
+      
+      echo "Certificate synced to secret $secret_name"
+    }
+    
+    # Sync certificates
+    extract_cert "dns.xs4some.nl" "dot-standard-tls"
+    extract_cert "kids.xs4some.nl" "dot-kids-tls"
+    
+    echo "Certificate sync completed!"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cert-sync
+  namespace: dns-system
+spec:
+  schedule: "0 */12 * * *"  # Every 12 hours
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: cert-sync
+          restartPolicy: OnFailure
+          containers:
+          - name: cert-sync
+            image: bitnami/kubectl:latest
+            command: ["/bin/bash", "/scripts/sync-certs.sh"]
+            volumeMounts:
+            - name: script
+              mountPath: /scripts
+          volumes:
+          - name: script
+            configMap:
+              name: cert-sync-script
+              defaultMode: 0755
+---
+# Run the sync job immediately 
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cert-sync-initial
+  namespace: dns-system
+spec:
+  template:
+    spec:
+      serviceAccountName: cert-sync
+      restartPolicy: OnFailure
+      containers:
+      - name: cert-sync
+        image: bitnami/kubectl:latest
+        command: ["/bin/bash", "/scripts/sync-certs.sh"]
+        volumeMounts:
+        - name: script
+          mountPath: /scripts
+      volumes:
+      - name: script
+        configMap:
+          name: cert-sync-script
+          defaultMode: 0755

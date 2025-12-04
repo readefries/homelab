@@ -1,0 +1,42 @@
+# DNS-over-TLS (DoT) IngressRoutes for Android Private DNS
+# Standard: dns.xs4some.nl:853
+# Kids: kids.xs4some.nl:8530
+
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: dot-standard
+  namespace: dns-system
+spec:
+  entryPoints:
+    - dot
+  routes:
+    - match: HostSNI(`dns.xs4some.nl`)
+      services:
+        - name: coredns-standard
+          port: 53
+  tls:
+    passthrough: false
+    certResolver: letsencrypt
+    domains:
+      - main: dns.xs4some.nl
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: dot-kids
+  namespace: dns-system
+spec:
+  entryPoints:
+    - dot-kids
+  routes:
+    - match: HostSNI(`kids.xs4some.nl`)
+      services:
+        - name: coredns-kids
+          port: 53
+  tls:
+    passthrough: false
+    certResolver: letsencrypt
+    domains:
+      - main: kids.xs4some.nl

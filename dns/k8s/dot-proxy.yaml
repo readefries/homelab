@@ -1,0 +1,96 @@
+# DNS-over-TLS (DoT) Proxy using stunnel
+# Uses kids filter (coredns-kids) for family-friendly DNS
+# Certificates are synced from Traefik via cert-sync CronJob
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stunnel-dot-config
+  namespace: dns-system
+data:
+  stunnel.conf: |
+    foreground = yes
+    socket = l:TCP_NODELAY=1
+    socket = r:TCP_NODELAY=1
+    
+    [dns]
+    accept = 853
+    connect = coredns-kids:53
+    cert = /etc/stunnel/certs/tls.crt
+    key = /etc/stunnel/certs/tls.key
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dot-proxy
+  namespace: dns-system
+  labels:
+    app: dot-proxy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dot-proxy
+  template:
+    metadata:
+      labels:
+        app: dot-proxy
+    spec:
+      containers:
+      - name: stunnel
+        image: dweomer/stunnel:latest
+        command: ["/usr/bin/stunnel", "/etc/stunnel/stunnel.conf"]
+        ports:
+        - containerPort: 853
+          name: dot
+          protocol: TCP
+        volumeMounts:
+        - name: stunnel-config
+          mountPath: /etc/stunnel/stunnel.conf
+          subPath: stunnel.conf
+        - name: tls-certs
+          mountPath: /etc/stunnel/certs
+          readOnly: true
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        livenessProbe:
+          tcpSocket:
+            port: 853
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 853
+          initialDelaySeconds: 2
+          periodSeconds: 5
+      volumes:
+      - name: stunnel-config
+        configMap:
+          name: stunnel-dot-config
+      - name: tls-certs
+        secret:
+          secretName: dot-kids-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dot-proxy
+  namespace: dns-system
+  labels:
+    app: dot-proxy
+spec:
+  selector:
+    app: dot-proxy
+  type: LoadBalancer
+  loadBalancerIP: 172.16.3.53
+  ports:
+  - name: dot
+    port: 853
+    targetPort: 853
+    protocol: TCP
