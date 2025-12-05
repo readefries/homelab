@@ -15,6 +15,9 @@ rules:
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "create", "update", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -68,6 +71,8 @@ data:
     #!/bin/bash
     set -e
     
+    CERTS_CHANGED=false
+    
     # Get the Traefik pod name
     TRAEFIK_POD=$(kubectl get pods -n traefik -l app=traefik -o jsonpath='{.items[0].metadata.name}')
     
@@ -104,6 +109,15 @@ data:
         return 1
       fi
       
+      # Get current cert from secret (if exists)
+      CURRENT_CERT=$(kubectl get secret "$secret_name" -n dns-system -o jsonpath='{.data.tls\.crt}' 2>/dev/null | base64 -d || echo "")
+      
+      # Compare certificates
+      if [ "$CERT" = "$CURRENT_CERT" ]; then
+        echo "Certificate for $domain unchanged"
+        return 0
+      fi
+      
       # Create or update the secret
       kubectl create secret tls "$secret_name" \
         --namespace=dns-system \
@@ -111,12 +125,22 @@ data:
         --key=<(echo "$KEY") \
         --dry-run=client -o yaml | kubectl apply -f -
       
-      echo "Certificate synced to secret $secret_name"
+      echo "Certificate updated for $secret_name"
+      CERTS_CHANGED=true
     }
     
     # Sync certificates
     extract_cert "dns.xs4some.nl" "dot-standard-tls"
     extract_cert "kids.xs4some.nl" "dot-kids-tls"
+    
+    # Restart dot-proxy only if certificates changed
+    if [ "$CERTS_CHANGED" = true ]; then
+      echo "Certificates changed, restarting dot-proxy deployment..."
+      kubectl rollout restart deployment/dot-proxy -n dns-system
+      kubectl rollout status deployment/dot-proxy -n dns-system --timeout=60s
+    else
+      echo "No certificate changes, skipping restart"
+    fi
     
     echo "Certificate sync completed!"
 ---
