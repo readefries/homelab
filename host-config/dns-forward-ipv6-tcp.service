@@ -1,0 +1,16 @@
+[Unit]
+Description=Forward IPv6 DNS TCP to LoadBalancer
+After=network.target k3s.service
+Wants=k3s.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/socat TCP6-LISTEN:53,fork,reuseaddr,bind=[2a02:a457:f2c0::8],max-children=50 TCP4:172.16.3.2:53
+Restart=always
+RestartSec=5
+# Prevent zombie process accumulation
+KillMode=mixed
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target
