@@ -1,0 +1,7 @@
+---
+- name: Setup DNS forwarder services
+  hosts: proxmox
+  become: yes
+  roles:
+    - dns-forward-ipv6-tcp
+    - dns-forward-ipv6-udp

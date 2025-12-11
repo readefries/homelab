@@ -1,0 +1,24 @@
+---
+- name: Ensure socat is installed
+  apt:
+    name: socat
+    state: present
+    update_cache: yes
+
+- name: Copy systemd service file for DNS forwarder over UDP
+  copy:
+    src: dns-forward-ipv6-udp.service
+    dest: /etc/systemd/system/dns-forward-ipv6-udp.service
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: Enable and start dns-forward-ipv6-udp service
+  systemd:
+    name: dns-forward-ipv6-udp.service
+    enabled: yes
+    state: restarted
