@@ -1,11 +1,11 @@
 [Unit]
-Description=Forward IPv6 DNS UDP to LoadBalancer
+Description=Forward IPv6 DNS TCP to LoadBalancer
 After=network.target k3s.service
 Wants=k3s.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/socat UDP6-LISTEN:53,fork,reuseaddr,bind=[2a02:a457:f2c0::8],max-children=50 UDP4:172.16.3.2:53
+ExecStart=/usr/bin/socat TCP6-LISTEN:53,fork,reuseaddr,bind=[{{ dns_ipv6_bind }}],max-children=50 TCP4:{{ dns_ipv4_backend }}:53
 Restart=always
 RestartSec=5
 # Prevent zombie process accumulation

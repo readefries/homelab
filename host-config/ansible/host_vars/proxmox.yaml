@@ -1,0 +1,3 @@
+# Host-specific variables for bluebox
+dns_ipv6_bind: "2a02:a457:f2c0::8"
+dns_ipv4_backend: "172.16.3.2"

@@ -5,9 +5,9 @@
     state: present
     update_cache: yes
 
-- name: Copy systemd service file for DNS forwarder over UDP
-  copy:
-    src: dns-forward-ipv6-udp.service
+- name: Template systemd service file for DNS forwarder over UDP
+  template:
+    src: dns-forward-ipv6-udp.service.j2
     dest: /etc/systemd/system/dns-forward-ipv6-udp.service
     owner: root
     group: root
