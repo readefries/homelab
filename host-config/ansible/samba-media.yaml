@@ -1,0 +1,5 @@
+- name: Setup Samba share for /Media
+  hosts: proxmox
+  become: yes
+  roles:
+    - samba-media

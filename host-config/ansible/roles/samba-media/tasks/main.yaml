@@ -1,0 +1,34 @@
+---
+- name: Ensure /Media directory exists
+  file:
+    path: /Media
+    state: directory
+    mode: '0775'
+
+- name: Install Samba
+  apt:
+    name: samba
+    state: present
+    update_cache: yes
+
+- name: Configure Samba share for /Media
+  blockinfile:
+    path: /etc/samba/smb.conf
+    marker: "; ANSIBLE MANAGED BLOCK: MEDIA SHARE"
+    block: |
+      [Media]
+      path = /Media
+      browseable = yes
+      read only = no
+      guest ok = yes
+
+- name: Set permissions on /Media
+  file:
+    path: /Media
+    mode: '0775'
+    recurse: yes
+
+- name: Restart Samba service
+  service:
+    name: smbd
+    state: restarted
