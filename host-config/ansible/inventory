@@ -1,2 +1,4 @@
 [proxmox]
 proxmox ansible_host=172.16.0.8 ansible_user=root ansible_ssh_private_key_file=~/.ssh/id_ed25519
+[bluebox]
+bluebox ansible_host=172.16.0.9 ansible_user=root ansible_ssh_private_key_file=~/.ssh/id_ed25519

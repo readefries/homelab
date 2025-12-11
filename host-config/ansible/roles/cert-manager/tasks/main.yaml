@@ -1,0 +1,30 @@
+
+- name: Create cert-manager namespace
+  command:
+    cmd: kubectl create namespace cert-manager
+  args:
+    creates: /var/run/cert-manager-namespace-created
+  register: cert_ns
+  changed_when: cert_ns.rc == 0
+
+- name: Get latest cert-manager release tag
+  uri:
+    url: https://api.github.com/repos/cert-manager/cert-manager/releases/latest
+    return_content: yes
+  register: cert_manager_release
+
+- name: Set cert-manager manifest url
+  set_fact:
+    cert_manager_manifest_url: "https://github.com/cert-manager/cert-manager/releases/download/{{ cert_manager_release.json.tag_name }}/cert-manager.yaml"
+
+- name: Apply cert-manager manifests
+  command:
+    cmd: kubectl apply -f {{ cert_manager_manifest_url }}
+  register: cert_apply
+  changed_when: cert_apply.rc == 0
+
+- name: Wait for cert-manager to be ready
+  command:
+    cmd: kubectl wait --namespace cert-manager --for=condition=ready pod --selector=app.kubernetes.io/instance=cert-manager --timeout=120s
+  register: cert_wait
+  changed_when: cert_wait.rc == 0

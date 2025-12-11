@@ -1,0 +1,8 @@
+- name: Recreate k3s cluster infrastructure
+  hosts: proxmox
+  become: yes
+  roles:
+    - k3s-install
+    - metallb
+    - cert-manager
+    - k8s-namespaces

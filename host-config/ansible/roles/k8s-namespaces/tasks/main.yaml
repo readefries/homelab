@@ -1,0 +1,16 @@
+---
+- name: Create core namespaces
+  command:
+    cmd: kubectl create namespace {{ item }}
+  loop:
+    - gotify
+    - monitoring
+    - mqtt
+    - plex
+    - smokeping
+    - syncthing
+    - transmission
+    - vaultwarden
+    - www
+  register: ns_create
+  changed_when: ns_create.rc == 0

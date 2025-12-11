@@ -1,0 +1,18 @@
+---
+- name: Download k3s install script
+  get_url:
+    url: https://get.k3s.io
+    dest: /tmp/k3s-install.sh
+    mode: '0755'
+
+- name: Run k3s install script
+  command:
+    cmd: sh /tmp/k3s-install.sh
+  args:
+    creates: /usr/local/bin/k3s
+
+- name: Ensure k3s service is running
+  service:
+    name: k3s
+    state: started
+    enabled: yes

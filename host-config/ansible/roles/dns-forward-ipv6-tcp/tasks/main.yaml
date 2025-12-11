@@ -5,9 +5,9 @@
     state: present
     update_cache: yes
 
-- name: Copy systemd service file for DNS forwarder over TCP
-  copy:
-    src: dns-forward-ipv6-tcp.service
+- name: Template systemd service file for DNS forwarder over TCP
+  template:
+    src: dns-forward-ipv6-tcp.service.j2
     dest: /etc/systemd/system/dns-forward-ipv6-tcp.service
     owner: root
     group: root

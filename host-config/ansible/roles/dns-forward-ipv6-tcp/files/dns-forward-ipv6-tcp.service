@@ -5,7 +5,7 @@ Wants=k3s.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/socat TCP6-LISTEN:53,fork,reuseaddr,bind=[2a02:a457:f2c0::8],max-children=50 TCP4:172.16.3.2:53
+ExecStart=/usr/bin/socat TCP6-LISTEN:53,fork,reuseaddr,bind=[2a02:a457:f2c0:0:a82d:1634:bd42:eb70],max-children=50 TCP4:172.16.3.2:53
 Restart=always
 RestartSec=5
 # Prevent zombie process accumulation

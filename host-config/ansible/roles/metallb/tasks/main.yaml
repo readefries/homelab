@@ -1,0 +1,30 @@
+---
+- name: Create MetalLB namespace
+  command:
+    cmd: kubectl create namespace metallb-system
+  args:
+    creates: /var/run/metallb-namespace-created
+  register: metallb_ns
+  changed_when: metallb_ns.rc == 0
+
+- name: Get latest MetalLB release tag
+  uri:
+    url: https://api.github.com/repos/metallb/metallb/releases/latest
+    return_content: yes
+  register: metallb_release
+
+- name: Set MetalLB manifest url
+  set_fact:
+    metallb_manifest_url: "https://github.com/metallb/metallb/releases/download/{{ metallb_release.json.tag_name }}/config/manifests/metallb-native.yaml"
+
+- name: Apply MetalLB manifests
+  command:
+    cmd: kubectl apply -f {{ metallb_manifest_url }}
+  register: metallb_apply
+  changed_when: metallb_apply.rc == 0
+
+- name: Wait for MetalLB controller to be ready
+  command:
+    cmd: kubectl wait --namespace metallb-system --for=condition=ready pod --selector=app=metallb --timeout=120s
+  register: metallb_wait
+  changed_when: metallb_wait.rc == 0
