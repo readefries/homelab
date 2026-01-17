@@ -1,0 +1,12 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: default-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - 172.16.3.1-172.16.3.254
+  # IPv6 addresses must be in the same /64 subnet as the node's interface
+  # for Layer2 mode to work (NDP neighbor discovery)
+  # Using a /80 range within the /64 gives us 2^48 addresses (281 trillion)
+  - 2a02:a457:f2c0:0:1::/80

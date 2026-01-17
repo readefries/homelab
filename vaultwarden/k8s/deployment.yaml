@@ -37,6 +37,10 @@ spec:
           value: "true"
         - name: SHOW_PASSWORD_HINT
           value: "false"
+        - name: ROCKET_ADDRESS
+          value: "::0"
+        - name: WEBSOCKET_ADDRESS
+          value: "::0"
         volumeMounts:
         - name: data
           mountPath: /data

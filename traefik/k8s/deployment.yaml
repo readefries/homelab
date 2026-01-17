@@ -8,7 +8,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate  # Required for hostNetwork with port conflicts
+    type: Recreate  # Required for LoadBalancer rollouts
   selector:
     matchLabels:
       app: traefik
@@ -17,7 +17,6 @@ spec:
       labels:
         app: traefik
     spec:
-      hostNetwork: true
       serviceAccountName: traefik
       containers:
       - name: traefik
