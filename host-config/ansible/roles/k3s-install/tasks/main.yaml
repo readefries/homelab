@@ -1,15 +1,28 @@
 ---
+- name: Enable IPv6 forwarding
+  sysctl:
+    name: net.ipv6.conf.all.forwarding
+    value: '1'
+    state: present
+    sysctl_set: yes
+    reload: yes
+
 - name: Download k3s install script
   get_url:
     url: https://get.k3s.io
     dest: /tmp/k3s-install.sh
     mode: '0755'
 
-- name: Run k3s install script
+- name: Run k3s install script with dual-stack configuration
   command:
-    cmd: sh /tmp/k3s-install.sh
+    cmd: >
+      sh /tmp/k3s-install.sh
+      --cluster-cidr=10.42.0.0/16,fd00:10:42::/56
+      --service-cidr=10.43.0.0/16,fd00:10:43::/112
   args:
     creates: /usr/local/bin/k3s
+  environment:
+    INSTALL_K3S_EXEC: "server"
 
 - name: Ensure k3s service is running
   service:

@@ -1,6 +1,46 @@
 # Proxmox Host Configuration
 
-This directory contains systemd service files and other configuration that needs to be installed directly on the Proxmox host (not in Kubernetes).
+This directory contains Ansible playbooks and configuration for setting up the Proxmox host and Kubernetes infrastructure.
+
+## Prerequisites
+
+- Proxmox host with IPv6 connectivity
+- Ansible installed on the control machine
+- SSH access to the Proxmox host
+
+## Kubernetes Installation with Dual-Stack Support
+
+The k3s installation is configured for dual-stack networking (IPv4 + IPv6):
+
+### Important IPv6 Requirements
+
+1. **IPv6 must be configured at install time** - The `--cluster-cidr` and `--service-cidr` cannot be changed after k3s is installed without completely reinstalling
+2. **IPv6 forwarding must be enabled** on the host before installation
+3. **MetalLB IPv6 pool must be in the same /64 subnet** as the node's network interface for Layer2 mode
+
+### Network Configuration
+
+- **Pod CIDR**: 
+  - IPv4: `10.42.0.0/16`
+  - IPv6: `fd00:10:42::/56`
+- **Service CIDR**:
+  - IPv4: `10.43.0.0/16`
+  - IPv6: `fd00:10:43::/112`
+- **LoadBalancer Pool**:
+  - IPv4: `172.16.3.1-172.16.3.254` (254 addresses)
+  - IPv6: `2a02:a457:f2c0:0:1::/80` (281 trillion addresses)
+
+## Installation
+
+```bash
+cd host-config/ansible
+
+# Install k3s with dual-stack support and MetalLB
+ansible-playbook -i inventory k8s-infra.yaml
+
+# Or run individual playbooks
+ansible-playbook -i inventory k3s-install.yaml
+```
 
 ## DNS IPv6 Forwarding
 

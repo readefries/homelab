@@ -1,30 +1,42 @@
 ---
-- name: Create MetalLB namespace
+- name: Apply MetalLB namespace
   command:
-    cmd: kubectl create namespace metallb-system
-  args:
-    creates: /var/run/metallb-namespace-created
-  register: metallb_ns
-  changed_when: metallb_ns.rc == 0
-
-- name: Get latest MetalLB release tag
-  uri:
-    url: https://api.github.com/repos/metallb/metallb/releases/latest
-    return_content: yes
-  register: metallb_release
-
-- name: Set MetalLB manifest url
-  set_fact:
-    metallb_manifest_url: "https://github.com/metallb/metallb/releases/download/{{ metallb_release.json.tag_name }}/config/manifests/metallb-native.yaml"
-
-- name: Apply MetalLB manifests
-  command:
-    cmd: kubectl apply -f {{ metallb_manifest_url }}
+    cmd: kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.9/config/manifests/metallb-native.yaml
   register: metallb_apply
-  changed_when: metallb_apply.rc == 0
+  changed_when: "'created' in metallb_apply.stdout or 'configured' in metallb_apply.stdout"
 
 - name: Wait for MetalLB controller to be ready
   command:
-    cmd: kubectl wait --namespace metallb-system --for=condition=ready pod --selector=app=metallb --timeout=120s
-  register: metallb_wait
-  changed_when: metallb_wait.rc == 0
+    cmd: kubectl wait --namespace metallb-system --for=condition=ready pod --selector=app=metallb,component=controller --timeout=90s
+  register: metallb_controller_wait
+  changed_when: false
+
+- name: Wait for MetalLB speaker to be ready
+  command:
+    cmd: kubectl wait --namespace metallb-system --for=condition=ready pod --selector=app=metallb,component=speaker --timeout=90s
+  register: metallb_speaker_wait
+  changed_when: false
+
+- name: Copy MetalLB configuration files
+  copy:
+    src: "{{ playbook_dir }}/../../metallb/k8s/"
+    dest: /tmp/metallb-config/
+    mode: '0644'
+
+- name: Apply MetalLB excludel2 configuration
+  command:
+    cmd: kubectl apply -f /tmp/metallb-config/excludel2.yaml
+  register: metallb_excludel2
+  changed_when: "'created' in metallb_excludel2.stdout or 'configured' in metallb_excludel2.stdout"
+
+- name: Apply MetalLB IPAddressPool
+  command:
+    cmd: kubectl apply -f /tmp/metallb-config/ipaddresspool.yaml
+  register: metallb_pool
+  changed_when: "'created' in metallb_pool.stdout or 'configured' in metallb_pool.stdout"
+
+- name: Apply MetalLB L2Advertisement
+  command:
+    cmd: kubectl apply -f /tmp/metallb-config/l2advertisement.yaml
+  register: metallb_l2
+  changed_when: "'created' in metallb_l2.stdout or 'configured' in metallb_l2.stdout"
