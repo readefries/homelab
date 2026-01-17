@@ -85,3 +85,91 @@ spec:
     protocol: TCP
     port: 53
     targetPort: 53
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coredns-kids-lb-ipv6
+  namespace: dns-system
+  annotations:
+    metallb.universe.tf/address-pool: default-pool
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "2a02:a457:f2c0:3::"
+  selector:
+    app: coredns-kids
+  ports:
+  - name: dns-udp
+    protocol: UDP
+    port: 53
+    targetPort: 53
+  - name: dns-tcp
+    protocol: TCP
+    port: 53
+    targetPort: 53
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coredns-standard-lb-ipv6
+  namespace: dns-system
+  annotations:
+    metallb.universe.tf/address-pool: default-pool
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "2a02:a457:f2c0:3::2"
+  selector:
+    app: coredns-standard
+  ports:
+  - name: dns-udp
+    protocol: UDP
+    port: 53
+    targetPort: 53
+  - name: dns-tcp
+    protocol: TCP
+    port: 53
+    targetPort: 53
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coredns-standard-lb2-ipv6
+  namespace: dns-system
+  annotations:
+    metallb.universe.tf/address-pool: default-pool
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "2a02:a457:f2c0:3::3"
+  selector:
+    app: coredns-standard
+  ports:
+  - name: dns-udp
+    protocol: UDP
+    port: 53
+    targetPort: 53
+  - name: dns-tcp
+    protocol: TCP
+    port: 53
+    targetPort: 53
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coredns-kids-lb2-ipv6
+  namespace: dns-system
+  annotations:
+    metallb.universe.tf/address-pool: default-pool
+spec:
+  type: LoadBalancer
+  loadBalancerIP: "2a02:a457:f2c0:3::1"
+  selector:
+    app: coredns-kids
+  ports:
+  - name: dns-udp
+    protocol: UDP
+    port: 53
+    targetPort: 53
+  - name: dns-tcp
+    protocol: TCP
+    port: 53
+    targetPort: 53
