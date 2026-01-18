@@ -1,7 +1,7 @@
 {
   "name": "Kubernetes Development",
-  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
-  
+  "image": "mcr.microsoft.com/vscode/devcontainers/base:ubuntu-22.04",
+
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {
       "configureZshAsDefaultShell": false,
@@ -46,7 +46,6 @@
 
   "postCreateCommand": "bash .devcontainer/postcreate.sh",
 
-  "forwardPorts": [8080, 9090, 3000],
-
-  "remoteUser": "vscode"
+  "remoteUser": "vscode",
+  "containerUser": "vscode"
 }
