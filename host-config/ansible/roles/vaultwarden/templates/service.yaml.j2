@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: vaultwarden
+  namespace: vaultwarden
+  annotations:
+    metallb.universe.tf/address-pool: default-pool
+spec:
+  type: LoadBalancer
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+  - IPv4
+  - IPv6
+  selector:
+    app: vaultwarden
+  ports:
+  - port: 80
+    targetPort: 80
+    name: http

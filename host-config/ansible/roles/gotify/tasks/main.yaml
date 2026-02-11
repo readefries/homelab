@@ -1,0 +1,34 @@
+---
+- name: Copy Gotify manifests
+  copy:
+    src: "{{ playbook_dir }}/../../gotify/k8s/"
+    dest: /tmp/gotify-config/
+    mode: '0644'
+
+- name: Apply Gotify namespace
+  command:
+    cmd: kubectl apply -f /tmp/gotify-config/namespace.yaml
+  register: gotify_ns
+  changed_when: "'created' in gotify_ns.stdout or 'configured' in gotify_ns.stdout"
+
+- name: Apply Gotify PVC
+  command:
+    cmd: kubectl apply -f /tmp/gotify-config/pvc.yaml
+  register: gotify_pvc
+  changed_when: "'created' in gotify_pvc.stdout or 'configured' in gotify_pvc.stdout"
+
+- name: Apply Gotify deployment
+  command:
+    cmd: kubectl apply -f /tmp/gotify-config/deployment.yaml
+  register: gotify_deploy
+  changed_when: "'created' in gotify_deploy.stdout or 'configured' in gotify_deploy.stdout"
+
+- name: Wait for Gotify to be ready
+  command:
+    cmd: kubectl wait --namespace gotify --for=condition=ready pod --selector=app=gotify --timeout=120s
+  register: gotify_wait
+  changed_when: false
+  failed_when: false
+  until: gotify_wait.rc == 0
+  retries: 5
+  delay: 5

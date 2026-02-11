@@ -1,0 +1,81 @@
+---
+- name: Copy Monitoring manifests
+  copy:
+    src: "{{ playbook_dir }}/../../monitoring/k8s/"
+    dest: /tmp/monitoring-config/
+    mode: '0644'
+
+- name: Apply Monitoring namespace
+  command:
+    cmd: kubectl apply -f /tmp/monitoring-config/namespace.yaml
+  register: monitoring_ns
+  changed_when: "'created' in monitoring_ns.stdout or 'configured' in monitoring_ns.stdout"
+
+- name: Apply Prometheus RBAC
+  command:
+    cmd: kubectl apply -f /tmp/monitoring-config/prometheus-rbac.yaml
+  register: prom_rbac
+  changed_when: "'created' in prom_rbac.stdout or 'configured' in prom_rbac.stdout"
+
+- name: Apply Prometheus ConfigMap
+  command:
+    cmd: kubectl apply -f /tmp/monitoring-config/prometheus-config.yaml
+  register: prom_config
+  changed_when: "'created' in prom_config.stdout or 'configured' in prom_config.stdout"
+
+- name: Apply Prometheus rules
+  command:
+    cmd: kubectl apply -f /tmp/monitoring-config/prometheus-rules.yaml
+  register: prom_rules
+  changed_when: "'created' in prom_rules.stdout or 'configured' in prom_rules.stdout"
+
+- name: Apply Prometheus deployment
+  command:
+    cmd: kubectl apply -f /tmp/monitoring-config/prometheus.yaml
+  register: prom_deploy
+  changed_when: "'created' in prom_deploy.stdout or 'configured' in prom_deploy.stdout"
+
+- name: Apply kube-state-metrics
+  command:
+    cmd: kubectl apply -f /tmp/monitoring-config/kube-state-metrics.yaml
+  register: ksm_deploy
+  changed_when: "'created' in ksm_deploy.stdout or 'configured' in ksm_deploy.stdout"
+
+- name: Apply Alertmanager config
+  command:
+    cmd: kubectl apply -f /tmp/monitoring-config/alertmanager-config.yaml
+  register: am_config
+  changed_when: "'created' in am_config.stdout or 'configured' in am_config.stdout"
+
+- name: Apply Alertmanager deployment
+  command:
+    cmd: kubectl apply -f /tmp/monitoring-config/alertmanager.yaml
+  register: am_deploy
+  changed_when: "'created' in am_deploy.stdout or 'configured' in am_deploy.stdout"
+
+- name: Apply Monitoring ingress
+  command:
+    cmd: kubectl apply -f /tmp/monitoring-config/ingress.yaml
+  register: monitoring_ingress
+  changed_when: "'created' in monitoring_ingress.stdout or 'configured' in monitoring_ingress.stdout"
+  ignore_errors: yes
+
+- name: Wait for Prometheus to be ready
+  command:
+    cmd: kubectl wait --namespace monitoring --for=condition=ready pod --selector=app=prometheus --timeout=120s
+  register: prom_wait
+  changed_when: false
+  failed_when: false
+  until: prom_wait.rc == 0
+  retries: 5
+  delay: 5
+
+- name: Wait for Alertmanager to be ready
+  command:
+    cmd: kubectl wait --namespace monitoring --for=condition=ready pod --selector=app=alertmanager --timeout=120s
+  register: am_wait
+  changed_when: false
+  failed_when: false
+  until: am_wait.rc == 0
+  retries: 5
+  delay: 5

@@ -1,0 +1,52 @@
+---
+- name: Copy Vaultwarden manifests
+  copy:
+    src: "{{ playbook_dir }}/../../vaultwarden/k8s/"
+    dest: /tmp/vaultwarden-config/
+    mode: '0644'
+
+- name: Apply Vaultwarden namespace
+  command:
+    cmd: kubectl apply -f /tmp/vaultwarden-config/namespace.yaml
+  register: vaultwarden_ns
+  changed_when: "'created' in vaultwarden_ns.stdout or 'configured' in vaultwarden_ns.stdout"
+
+- name: Apply Vaultwarden PVC
+  command:
+    cmd: kubectl apply -f /tmp/vaultwarden-config/pvc.yaml
+  register: vaultwarden_pvc
+  changed_when: "'created' in vaultwarden_pvc.stdout or 'configured' in vaultwarden_pvc.stdout"
+
+- name: Apply Vaultwarden deployment
+  command:
+    cmd: kubectl apply -f /tmp/vaultwarden-config/deployment.yaml
+  register: vaultwarden_deploy
+  changed_when: "'created' in vaultwarden_deploy.stdout or 'configured' in vaultwarden_deploy.stdout"
+
+- name: Generate Vaultwarden service from template
+  template:
+    src: service.yaml.j2
+    dest: /tmp/vaultwarden-config/service.yaml
+    mode: '0644'
+
+- name: Apply Vaultwarden service
+  command:
+    cmd: kubectl apply -f /tmp/vaultwarden-config/service.yaml
+  register: vaultwarden_svc
+  changed_when: "'created' in vaultwarden_svc.stdout or 'configured' in vaultwarden_svc.stdout"
+
+- name: Apply Vaultwarden ingress
+  command:
+    cmd: kubectl apply -f /tmp/vaultwarden-config/ingress.yaml
+  register: vaultwarden_ingress
+  changed_when: "'created' in vaultwarden_ingress.stdout or 'configured' in vaultwarden_ingress.stdout"
+
+- name: Wait for Vaultwarden to be ready
+  command:
+    cmd: kubectl wait --namespace vaultwarden --for=condition=ready pod --selector=app=vaultwarden --timeout=120s
+  register: vaultwarden_wait
+  changed_when: false
+  failed_when: false
+  until: vaultwarden_wait.rc == 0
+  retries: 5
+  delay: 5

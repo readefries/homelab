@@ -1,5 +1,5 @@
 - name: Recreate k3s cluster infrastructure
-  hosts: proxmox
+  hosts: all
   become: yes
   roles:
     - k3s-install

@@ -1,0 +1,58 @@
+---
+- name: Copy MQTT manifests
+  copy:
+    src: "{{ playbook_dir }}/../../mqtt/k8s/"
+    dest: /tmp/mqtt-config/
+    mode: '0644'
+
+- name: Apply MQTT namespace
+  command:
+    cmd: kubectl apply -f /tmp/mqtt-config/namespace.yaml
+  register: mqtt_ns
+  changed_when: "'created' in mqtt_ns.stdout or 'configured' in mqtt_ns.stdout"
+
+- name: Apply MQTT ConfigMap
+  command:
+    cmd: kubectl apply -f /tmp/mqtt-config/configmap.yaml
+  register: mqtt_config
+  changed_when: "'created' in mqtt_config.stdout or 'configured' in mqtt_config.stdout"
+
+- name: Apply MQTT PVC
+  command:
+    cmd: kubectl apply -f /tmp/mqtt-config/pvc.yaml
+  register: mqtt_pvc
+  changed_when: "'created' in mqtt_pvc.stdout or 'configured' in mqtt_pvc.stdout"
+
+- name: Apply MQTT deployment
+  command:
+    cmd: kubectl apply -f /tmp/mqtt-config/deployment.yaml
+  register: mqtt_deploy
+  changed_when: "'created' in mqtt_deploy.stdout or 'configured' in mqtt_deploy.stdout"
+
+- name: Apply MQTT service
+  command:
+    cmd: kubectl apply -f /tmp/mqtt-config/service.yaml
+  register: mqtt_svc
+  changed_when: "'created' in mqtt_svc.stdout or 'configured' in mqtt_svc.stdout"
+
+- name: Generate MQTT LoadBalancer from template
+  template:
+    src: service-lb.yaml.j2
+    dest: /tmp/mqtt-config/service-lb.yaml
+    mode: '0644'
+
+- name: Apply MQTT LoadBalancer
+  command:
+    cmd: kubectl apply -f /tmp/mqtt-config/service-lb.yaml
+  register: mqtt_lb
+  changed_when: "'created' in mqtt_lb.stdout or 'configured' in mqtt_lb.stdout"
+
+- name: Wait for MQTT to be ready
+  command:
+    cmd: kubectl wait --namespace mqtt --for=condition=ready pod --selector=app=mosquitto --timeout=120s
+  register: mqtt_wait
+  changed_when: false
+  failed_when: false
+  until: mqtt_wait.rc == 0
+  retries: 5
+  delay: 5

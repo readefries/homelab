@@ -7,15 +7,23 @@
 
 - name: Wait for MetalLB controller to be ready
   command:
-    cmd: kubectl wait --namespace metallb-system --for=condition=ready pod --selector=app=metallb,component=controller --timeout=90s
+    cmd: kubectl wait --namespace metallb-system --for=condition=ready pod --selector=app=metallb,component=controller --timeout=120s
   register: metallb_controller_wait
   changed_when: false
+  failed_when: false
+  until: metallb_controller_wait.rc == 0
+  retries: 5
+  delay: 5
 
 - name: Wait for MetalLB speaker to be ready
   command:
-    cmd: kubectl wait --namespace metallb-system --for=condition=ready pod --selector=app=metallb,component=speaker --timeout=90s
+    cmd: kubectl wait --namespace metallb-system --for=condition=ready pod --selector=app=metallb,component=speaker --timeout=120s
   register: metallb_speaker_wait
   changed_when: false
+  failed_when: false
+  until: metallb_speaker_wait.rc == 0
+  retries: 5
+  delay: 5
 
 - name: Copy MetalLB configuration files
   copy:
@@ -28,6 +36,12 @@
     cmd: kubectl apply -f /tmp/metallb-config/excludel2.yaml
   register: metallb_excludel2
   changed_when: "'created' in metallb_excludel2.stdout or 'configured' in metallb_excludel2.stdout"
+
+- name: Generate MetalLB IPAddressPool from template
+  template:
+    src: ipaddresspool.yaml.j2
+    dest: /tmp/metallb-config/ipaddresspool.yaml
+    mode: '0644'
 
 - name: Apply MetalLB IPAddressPool
   command:

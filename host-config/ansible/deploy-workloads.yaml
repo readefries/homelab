@@ -1,0 +1,11 @@
+---
+- name: Deploy all homelab workloads
+  hosts: all
+  become: yes
+  roles:
+    - traefik
+    - vaultwarden
+    - gotify
+    - dns
+    - mqtt
+    - monitoring

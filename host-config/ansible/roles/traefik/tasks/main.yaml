@@ -1,0 +1,31 @@
+---
+# Configure k3s's built-in Traefik with Let's Encrypt support
+# Note: k3s Traefik runs in kube-system namespace, not a separate traefik namespace
+
+- name: Apply Traefik secret (CloudDNS credentials for Let's Encrypt DNS challenge)
+  command:
+    cmd: kubectl apply -f {{ playbook_dir }}/../../traefik/k8s/secret-cloudns.yaml
+  register: traefik_secret
+  changed_when: "'created' in traefik_secret.stdout or 'configured' in traefik_secret.stdout"
+
+- name: Apply Traefik config (Let's Encrypt and DNS resolution)
+  command:
+    cmd: kubectl apply -f {{ playbook_dir }}/../../traefik/k8s/config.yaml
+  register: traefik_config
+  changed_when: "'created' in traefik_config.stdout or 'configured' in traefik_config.stdout"
+
+- name: Apply host services (external services exposed via Traefik)
+  command:
+    cmd: kubectl apply -f {{ playbook_dir }}/../../traefik/hosts/
+  register: traefik_hosts
+  changed_when: "'created' in traefik_hosts.stdout or 'configured' in traefik_hosts.stdout"
+
+- name: Wait for Traefik to be ready
+  command:
+    cmd: kubectl wait --namespace kube-system --for=condition=ready pod --selector=app.kubernetes.io/name=traefik --timeout=120s
+  register: traefik_wait
+  changed_when: false
+  failed_when: false
+  until: traefik_wait.rc == 0
+  retries: 5
+  delay: 5

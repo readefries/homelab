@@ -1,0 +1,46 @@
+---
+- name: Copy DNS manifests
+  copy:
+    src: "{{ playbook_dir }}/../../dns/k8s/"
+    dest: /tmp/dns-config/
+    mode: '0644'
+
+- name: Apply DNS namespace
+  command:
+    cmd: kubectl apply -f /tmp/dns-config/namespace.yaml
+  register: dns_ns
+  changed_when: "'created' in dns_ns.stdout or 'configured' in dns_ns.stdout"
+
+- name: Apply DNS ConfigMaps
+  command:
+    cmd: kubectl apply -f /tmp/dns-config/{{ item }}
+  loop:
+    - coredns-standard.yaml
+    - coredns-kids.yaml
+  register: dns_configs
+  changed_when: "'created' in dns_configs.stdout or 'configured' in dns_configs.stdout"
+
+- name: Generate DNS LoadBalancer services from template
+  template:
+    src: dns-loadbalancer.yaml.j2
+    dest: /tmp/dns-config/dns-loadbalancer.yaml
+    mode: '0644'
+
+- name: Apply DNS LoadBalancer services
+  command:
+    cmd: kubectl apply -f /tmp/dns-config/dns-loadbalancer.yaml
+  register: dns_lb
+  changed_when: "'created' in dns_lb.stdout or 'configured' in dns_lb.stdout"
+
+- name: Wait for DNS pods to be ready
+  command:
+    cmd: kubectl wait --namespace dns-system --for=condition=ready pod --selector=app={{ item }} --timeout=120s
+  loop:
+    - coredns-standard
+    - coredns-kids
+  register: dns_wait
+  changed_when: false
+  failed_when: false
+  until: dns_wait.rc == 0
+  retries: 5
+  delay: 5

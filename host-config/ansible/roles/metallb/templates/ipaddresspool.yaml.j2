@@ -1,0 +1,23 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: static-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - {{ metallb_ipv4_pool_static }}
+  - {{ metallb_ipv6_pool_static }}
+  autoAssign: true
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: dynamic-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - {{ metallb_ipv4_pool_dynamic }}
+  # IPv6 addresses must be in the same /64 subnet as the node's interface
+  # for Layer2 mode to work (NDP neighbor discovery)
+  - {{ metallb_ipv6_pool_dynamic }}
+  autoAssign: true

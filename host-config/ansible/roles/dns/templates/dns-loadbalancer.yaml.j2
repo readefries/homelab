@@ -1,0 +1,207 @@
+# Kids DNS - IPv4 Tier (1st LoadBalancer)
+apiVersion: v1
+kind: Service
+metadata:
+  name: coredns-kids-lb
+  namespace: dns-system
+  annotations:
+    metallb.universe.tf/address-pool: static-pool
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{ dns_kids_ipv4_lb }}
+  ipFamilyPolicy: SingleStack
+  ipFamilies:
+  - IPv4
+  selector:
+    app: coredns-kids
+  ports:
+  - name: dns-udp
+    protocol: UDP
+    port: 53
+    targetPort: 53
+  - name: dns-tcp
+    protocol: TCP
+    port: 53
+    targetPort: 53
+---
+# Kids DNS - IPv4 Tier (2nd LoadBalancer - redundancy)
+apiVersion: v1
+kind: Service
+metadata:
+  name: coredns-kids-lb2
+  namespace: dns-system
+  annotations:
+    metallb.universe.tf/address-pool: static-pool
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{ dns_kids_ipv4_lb2 }}
+  ipFamilyPolicy: SingleStack
+  ipFamilies:
+  - IPv4
+  selector:
+    app: coredns-kids
+  ports:
+  - name: dns-udp
+    protocol: UDP
+    port: 53
+    targetPort: 53
+  - name: dns-tcp
+    protocol: TCP
+    port: 53
+    targetPort: 53
+---
+# Kids DNS - IPv6 Tier (1st LoadBalancer)
+apiVersion: v1
+kind: Service
+metadata:
+  name: coredns-kids-ipv6-lb
+  namespace: dns-system
+  annotations:
+    metallb.universe.tf/address-pool: static-pool
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{ dns_kids_ipv6_lb }}
+  ipFamilyPolicy: SingleStack
+  ipFamilies:
+  - IPv6
+  selector:
+    app: coredns-kids
+  ports:
+  - name: dns-udp
+    protocol: UDP
+    port: 53
+    targetPort: 53
+  - name: dns-tcp
+    protocol: TCP
+    port: 53
+    targetPort: 53
+---
+# Kids DNS - IPv6 Tier (2nd LoadBalancer - redundancy)
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    metallb.universe.tf/address-pool: static-pool
+  name: coredns-kids-ipv6-lb2
+  namespace: dns-system
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{ dns_kids_ipv6_lb2 }}
+  ipFamilyPolicy: SingleStack
+  ipFamilies:
+  - IPv6
+  selector:
+    app: coredns-kids
+  ports:
+  - name: dns-udp
+    protocol: UDP
+    port: 53
+    targetPort: 53
+  - name: dns-tcp
+    protocol: TCP
+    port: 53
+    targetPort: 53
+---
+# Standard DNS - IPv4 Tier (1st LoadBalancer)
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    metallb.universe.tf/address-pool: static-pool
+  name: coredns-standard-lb
+  namespace: dns-system
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{ dns_standard_ipv4_lb }}
+  ipFamilyPolicy: SingleStack
+  ipFamilies:
+  - IPv4
+  selector:
+    app: coredns-standard
+  ports:
+  - name: dns-udp
+    protocol: UDP
+    port: 53
+    targetPort: 53
+  - name: dns-tcp
+    protocol: TCP
+    port: 53
+    targetPort: 53
+---
+# Standard DNS - IPv4 Tier (2nd LoadBalancer - redundancy)
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    metallb.universe.tf/address-pool: static-pool
+  name: coredns-standard-lb2
+  namespace: dns-system
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{ dns_standard_ipv4_lb2 }}
+  ipFamilyPolicy: SingleStack
+  ipFamilies:
+  - IPv4
+  selector:
+    app: coredns-standard
+  ports:
+  - name: dns-udp
+    protocol: UDP
+    port: 53
+    targetPort: 53
+  - name: dns-tcp
+    protocol: TCP
+    port: 53
+    targetPort: 53
+---
+# Standard DNS - IPv6 Tier (1st LoadBalancer)
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    metallb.universe.tf/address-pool: static-pool
+  name: coredns-standard-ipv6-lb
+  namespace: dns-system
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{ dns_standard_ipv6_lb }}
+  ipFamilyPolicy: SingleStack
+  ipFamilies:
+  - IPv6
+  selector:
+    app: coredns-standard
+  ports:
+  - name: dns-udp
+    protocol: UDP
+    port: 53
+    targetPort: 53
+  - name: dns-tcp
+    protocol: TCP
+    port: 53
+    targetPort: 53
+---
+# Standard DNS - IPv6 Tier (2nd LoadBalancer - redundancy)
+apiVersion: v1
+kind: Service
+metadata:
+  name: coredns-standard-ipv6-lb2
+  namespace: dns-system
+  annotations:
+    metallb.universe.tf/address-pool: static-pool
+spec:
+  type: LoadBalancer
+  loadBalancerIP: {{ dns_standard_ipv6_lb2 }}
+  ipFamilyPolicy: SingleStack
+  ipFamilies:
+  - IPv6
+  selector:
+    app: coredns-standard
+  ports:
+  - name: dns-udp
+    protocol: UDP
+    port: 53
+    targetPort: 53
+  - name: dns-tcp
+    protocol: TCP
+    port: 53
+    targetPort: 53
