@@ -18,7 +18,7 @@ metadata:
   namespace: default
 subsets:
 - addresses:
-  - ip: 172.16.0.117  # Home Assistant IP
+  - ip: 172.16.0.8  # Home Assistant IPv4 on Proxmox host
   ports:
   - port: 8123
 ---
@@ -29,9 +29,9 @@ metadata:
   name: hass-ingress
   namespace: default
   annotations:
-    kubernetes.io/ingress.class: traefik
     traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
 spec:
+  ingressClassName: traefik
   rules:
   - host: ha.xs4some.nl
     http:
