@@ -1,0 +1,6 @@
+heman/AsyncMqttClient-esphome@2.0.0
+ESP8266WiFi
+bblanchon/ArduinoJson@6.18.5
+ESP8266mDNS
+esphome/ESPAsyncWebServer-esphome@3.2.2
+esphome/ESPAsyncTCP-esphome@2.0.0

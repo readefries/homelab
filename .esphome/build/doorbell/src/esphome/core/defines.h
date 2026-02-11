@@ -1,0 +1,27 @@
+#pragma once
+#include "esphome/core/macros.h"
+#define ESPHOME_BOARD "esp01_1m"
+#define ESPHOME_VARIANT "ESP8266"
+#define USE_ARDUINO_VERSION_CODE VERSION_CODE(3, 1, 2)
+#define USE_BINARY_SENSOR
+#define USE_ESP8266_EARLY_PIN_INIT
+#define USE_JSON
+#define USE_LOGGER
+#define USE_MD5
+#define USE_MDNS
+#define USE_MQTT
+#define USE_MQTT_ABBREVIATIONS
+#define USE_NETWORK
+#define USE_NETWORK_IPV6 false
+#define USE_OTA
+#define USE_OTA_VERSION 2
+#define USE_SENSOR
+#define USE_SOCKET_IMPL_LWIP_TCP
+#define USE_SWITCH
+#define USE_TEXT_SENSOR
+#define USE_TIME
+#define USE_WEBSERVER
+#define USE_WEBSERVER_PORT 80
+#define USE_WEBSERVER_PRIVATE_NETWORK_ACCESS
+#define USE_WEBSERVER_VERSION 2
+#define USE_WIFI
