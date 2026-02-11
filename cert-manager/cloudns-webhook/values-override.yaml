@@ -1,0 +1,27 @@
+groupName: acme.xs4some.nl
+fullnameOverride: cloudns-webhook
+
+clouDNS:
+  authIdType: sub-auth-id
+  credentialsDir: /creds
+
+secretName: cloudns-api-secret
+
+certManager:
+  namespace: cert-manager
+  serviceAccountName: cert-manager
+
+image:
+  repository: ixoncloud/cert-manager-webhook-cloudns
+  tag: 1.1.1
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 443
+
+replicaCount: 1
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

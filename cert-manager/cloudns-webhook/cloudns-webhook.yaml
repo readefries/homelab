@@ -1,0 +1,321 @@
+---
+# Source: cert-manager-webhook-cloudns/templates/rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloudns-webhook
+  labels:
+    app: cert-manager-webhook-cloudns
+---
+# Source: cert-manager-webhook-cloudns/templates/rbac.yaml
+# Grant cert-manager permission to validate using our apiserver
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloudns-webhook:domain-solver
+  labels:
+    app: cert-manager-webhook-cloudns
+rules:
+  - apiGroups:
+      - acme.xs4some.nl
+    resources:
+      - '*'
+    verbs:
+      - 'create'
+---
+# Source: cert-manager-webhook-cloudns/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloudns-webhook:flowcontrol-solver
+  labels:
+    app: cert-manager-webhook-cloudns
+    chart: cert-manager-webhook-cloudns-1.1.1
+    release: cloudns-webhook
+    heritage: Helm
+rules:
+  - apiGroups:
+      - "flowcontrol.apiserver.k8s.io"
+    resources:
+      - 'prioritylevelconfigurations'
+      - 'flowschemas'
+    verbs:
+      - 'list'
+      - 'watch'
+---
+# Source: cert-manager-webhook-cloudns/templates/secret-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloudns-webhook:cloudns-api-secret-access
+  labels:
+    app: cert-manager-webhook-cloudns
+rules:
+  - apiGroups: [""]
+    resources:
+      - secrets
+    resourceNames:
+      - cloudns-api-secret
+    verbs:
+      - 'get'
+---
+# Source: cert-manager-webhook-cloudns/templates/rbac.yaml
+# apiserver gets the auth-delegator role to delegate auth decisions to
+# the core apiserver
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cloudns-webhook:auth-delegator
+  labels:
+    app: cert-manager-webhook-cloudns
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:auth-delegator
+subjects:
+  - apiGroup: ""
+    kind: ServiceAccount
+    name: cloudns-webhook
+    namespace: cert-manager
+---
+# Source: cert-manager-webhook-cloudns/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cloudns-webhook:domain-solver
+  labels:
+    app: cert-manager-webhook-cloudns
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloudns-webhook:domain-solver
+subjects:
+  - apiGroup: ""
+    kind: ServiceAccount
+    name: cert-manager
+    namespace: cert-manager
+---
+# Source: cert-manager-webhook-cloudns/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cloudns-webhook:flowcontrol-solver
+  labels:
+    app: cert-manager-webhook-cloudns
+    chart: cert-manager-webhook-cloudns-1.1.1
+    release: cloudns-webhook
+    heritage: Helm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloudns-webhook:flowcontrol-solver
+subjects:
+  - apiGroup: ""
+    kind: ServiceAccount
+    name: cloudns-webhook
+    namespace: "cert-manager"
+---
+# Source: cert-manager-webhook-cloudns/templates/secret-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cloudns-webhook:api-secret-access
+  labels:
+    app: cert-manager-webhook-cloudns
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloudns-webhook:api-secret-access
+subjects:
+  - apiGroup: ""
+    kind: ServiceAccount
+    namespace: default
+    name: cloudns-webhook
+---
+# Source: cert-manager-webhook-cloudns/templates/rbac.yaml
+# Grant the webhook permission to read the ConfigMap containing the Kubernetes
+# apiserver's requestheader-ca-certificate.
+# This ConfigMap is automatically created by the Kubernetes apiserver.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cloudns-webhook:webhook-authentication-reader
+  namespace: kube-system
+  labels:
+    app: cert-manager-webhook-cloudns
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: extension-apiserver-authentication-reader
+subjects:
+  - apiGroup: ""
+    kind: ServiceAccount
+    name: cloudns-webhook
+    namespace: cert-manager
+---
+# Source: cert-manager-webhook-cloudns/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudns-webhook
+  labels:
+    app: cert-manager-webhook-cloudns
+spec:
+  type: ClusterIP
+  ports:
+    - port: 443
+      targetPort: https
+      protocol: TCP
+      name: https
+  selector:
+    app: cert-manager-webhook-cloudns
+---
+# Source: cert-manager-webhook-cloudns/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudns-webhook
+  namespace: "cert-manager"
+  labels:
+    app: cert-manager-webhook-cloudns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cert-manager-webhook-cloudns
+  template:
+    metadata:
+      labels:
+        app: cert-manager-webhook-cloudns
+    spec:
+      serviceAccountName: cloudns-webhook
+      containers:
+        - name: cert-manager-webhook-cloudns
+          image: "ixoncloud/cert-manager-webhook-cloudns:1.1.1"
+          imagePullPolicy: IfNotPresent
+          args:
+            - --tls-cert-file=/certs/tls.crt
+            - --tls-private-key-file=/certs/tls.key
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: GROUP_NAME
+              value: "acme.xs4some.nl"
+            - name: CLOUDNS_AUTH_ID_FILE
+              value: "/creds/auth_id"
+            - name: CLOUDNS_AUTH_PASSWORD_FILE
+              value: "/creds/auth_password"
+            - name: CLOUDNS_AUTH_ID_TYPE
+              value: sub-auth-id
+          ports:
+            - name: https
+              containerPort: 443
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /healthz
+              port: https
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /healthz
+              port: https
+          volumeMounts:
+            - name: certs
+              mountPath: /certs
+              readOnly: true
+            - name: creds
+              mountPath: /creds
+              readOnly: true
+          resources:
+            {}
+      volumes:
+        - name: certs
+          secret:
+            secretName: cloudns-webhook-webhook-tls
+        - name: creds
+          secret:
+            secretName: cloudns-api-secret
+---
+# Source: cert-manager-webhook-cloudns/templates/apiservice.yaml
+apiVersion: apiregistration.k8s.io/v1
+kind: APIService
+metadata:
+  name: v1alpha1.acme.xs4some.nl
+  labels:
+    app: cert-manager-webhook-cloudns
+  annotations:
+    cert-manager.io/inject-ca-from: "cert-manager/cloudns-webhook-webhook-tls"
+spec:
+  group: acme.xs4some.nl
+  groupPriorityMinimum: 1000
+  versionPriority: 15
+  service:
+    name: cloudns-webhook
+    namespace: cert-manager
+  version: v1alpha1
+---
+# Source: cert-manager-webhook-cloudns/templates/pki.yaml
+# Generate a CA Certificate used to sign certificates for the webhook
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cloudns-webhook-ca
+  namespace: "cert-manager"
+  labels:
+    app: cert-manager-webhook-cloudns
+spec:
+  secretName: cloudns-webhook-ca
+  duration: 43800h # 5y
+  issuerRef:
+    name: cloudns-webhook-selfsign
+  commonName: "ca.cert-manager-webhook-cloudns.cert-manager"
+  isCA: true
+---
+# Source: cert-manager-webhook-cloudns/templates/pki.yaml
+# Finally, generate a serving certificate for the webhook to use
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: cloudns-webhook-webhook-tls
+  namespace: "cert-manager"
+  labels:
+    app: cert-manager-webhook-cloudns
+spec:
+  secretName: cloudns-webhook-webhook-tls
+  duration: 8760h # 1y
+  issuerRef:
+    name: cloudns-webhook-ca
+  dnsNames:
+  - cloudns-webhook
+  - cloudns-webhook.cert-manager
+  - cloudns-webhook.cert-manager.svc
+---
+# Source: cert-manager-webhook-cloudns/templates/pki.yaml
+# Create a selfsigned Issuer, in order to create a root CA certificate for
+# signing webhook serving certificates
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: cloudns-webhook-selfsign
+  namespace: "cert-manager"
+  labels:
+    app: cert-manager-webhook-cloudns
+spec:
+  selfSigned: {}
+---
+# Source: cert-manager-webhook-cloudns/templates/pki.yaml
+# Create an Issuer that uses the above generated CA certificate to issue certs
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: cloudns-webhook-ca
+  namespace: "cert-manager"
+  labels:
+    app: cert-manager-webhook-cloudns
+spec:
+  ca:
+    secretName: cloudns-webhook-ca
