@@ -88,7 +88,7 @@ spec:
   selector:
     app: dot-proxy
   type: LoadBalancer
-  loadBalancerIP: 172.16.3.53
+  # IP assigned dynamically by MetalLB; static IPs are managed via Ansible templates
   ports:
   - name: dot
     port: 853

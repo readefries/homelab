@@ -1,0 +1,94 @@
+- id: '1754407224126'
+  alias: Deurbel uit om 21.00 uur
+  description: ''
+  triggers:
+  - trigger: time
+    at: '21:00:00'
+  conditions: []
+  actions:
+  - type: turn_off
+    device_id: 97d5885378de6fdcb85f084abaed842f
+    entity_id: 7e28ff17357e453ce1aa9a32228d55d1
+    domain: switch
+  mode: single
+- id: '1754407278609'
+  alias: Deurbel aan om 8.00
+  description: ''
+  triggers:
+  - trigger: time
+    at: 08:00:00
+  conditions: []
+  actions:
+  - type: turn_on
+    device_id: 97d5885378de6fdcb85f084abaed842f
+    entity_id: 7e28ff17357e453ce1aa9a32228d55d1
+    domain: switch
+  mode: single
+- id: '1754480338865'
+  alias: Buitenlamp uit bij zonsopkomst
+  description: ''
+  triggers:
+  - trigger: sun
+    event: sunrise
+    offset: 0
+  conditions: []
+  actions:
+  - type: turn_off
+    device_id: c4817bca90d85e360c07f14b7d8a4acf
+    entity_id: 35d5122eaa8b7643889cec1aaccdaf69
+    domain: switch
+  mode: single
+- id: '1754480398335'
+  alias: Buitenlamp aan bij zonsondergang
+  description: ''
+  triggers:
+  - trigger: sun
+    event: sunset
+    offset: 0
+  conditions: []
+  actions:
+  - type: turn_on
+    device_id: c4817bca90d85e360c07f14b7d8a4acf
+    entity_id: 35d5122eaa8b7643889cec1aaccdaf69
+    domain: switch
+  mode: single
+- id: '1754480539250'
+  alias: Licht hal aan bij beweging in de gang
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.hue_motion_sensor_1_motion
+    from: 'off'
+    to: 'on'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 1
+  conditions: []
+  actions:
+  - type: turn_on
+    device_id: c4817bca90d85e360c07f14b7d8a4acf
+    entity_id: ac265d71701e518f67c8808c4ca115a3
+    domain: switch
+  mode: single
+- id: '1754480590313'
+  alias: Licht hal aan uit bij geen beweging gang
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.hue_motion_sensor_1_motion
+    from: 'on'
+    to: 'off'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 15
+  conditions: []
+  actions:
+  - type: turn_off
+    device_id: c4817bca90d85e360c07f14b7d8a4acf
+    entity_id: ac265d71701e518f67c8808c4ca115a3
+    domain: switch
+  mode: single

@@ -79,6 +79,8 @@ spec:
       - name: download-blocklist
         image: curlimages/curl:latest
         command: ["/bin/sh", "/scripts/download.sh"]
+        securityContext:
+          runAsUser: 0
         volumeMounts:
         - name: blocklists
           mountPath: /blocklists
