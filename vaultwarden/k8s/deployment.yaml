@@ -38,9 +38,9 @@ spec:
         - name: SHOW_PASSWORD_HINT
           value: "false"
         - name: ROCKET_ADDRESS
-          value: "::0"
+          value: "::"
         - name: WEBSOCKET_ADDRESS
-          value: "::0"
+          value: "::"
         volumeMounts:
         - name: data
           mountPath: /data
@@ -55,16 +55,3 @@ spec:
       - name: data
         persistentVolumeClaim:
           claimName: vaultwarden-data
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: vaultwarden
-  namespace: vaultwarden
-spec:
-  selector:
-    app: vaultwarden
-  ports:
-  - port: 80
-    targetPort: 80
-    name: http

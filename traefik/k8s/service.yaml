@@ -1,42 +1,44 @@
 apiVersion: v1
 kind: Service
 metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{"metallb.universe.tf/address-pool":"default-pool"},"labels":{"app":"traefik"},"name":"traefik","namespace":"traefik"},"spec":{"loadBalancerIP":"172.16.0.80","ports":[{"name":"web","port":80,"protocol":"TCP","targetPort":80},{"name":"websecure","port":443,"protocol":"TCP","targetPort":443}],"selector":{"app":"traefik"},"type":"LoadBalancer"}}
+    metallb.universe.tf/address-pool: default-pool
+  creationTimestamp: "2025-11-28T21:02:46Z"
+  finalizers:
+  - service.kubernetes.io/load-balancer-cleanup
+  labels:
+    app: traefik
   name: traefik
   namespace: traefik
-  labels:
-    app: traefik
-  annotations:
-    metallb.universe.tf/address-pool: default-pool
+  resourceVersion: "1973725"
+  uid: 29f21d09-70d4-4f30-adc2-a56614ad229c
 spec:
-  type: LoadBalancer
-  ipFamilyPolicy: PreferDualStack
+  allocateLoadBalancerNodePorts: true
+  clusterIP: 10.43.235.31
+  clusterIPs:
+  - 10.43.235.31
+  externalTrafficPolicy: Local 
+  internalTrafficPolicy: Cluster
   ipFamilies:
   - IPv4
-  - IPv6
-  selector:
-    app: traefik
+  ipFamilyPolicy: SingleStack
+  loadBalancerIP: 172.16.0.80
   ports:
   - name: web
+    nodePort: 30080
     port: 80
+    protocol: TCP
     targetPort: 80
-    protocol: TCP
   - name: websecure
+    nodePort: 30443
     port: 443
-    targetPort: 443
     protocol: TCP
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: traefik-dashboard
-  namespace: traefik
-  labels:
-    app: traefik
-spec:
-  type: ClusterIP
+    targetPort: 443
   selector:
     app: traefik
-  ports:
-  - name: admin
-    port: 8080
-    targetPort: 8080
+  sessionAffinity: None
+  type: LoadBalancer
+status:
+  loadBalancer: {}

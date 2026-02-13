@@ -32,15 +32,61 @@ The k3s installation is configured for dual-stack networking (IPv4 + IPv6):
 
 ## Installation
 
+### Full Infrastructure Deployment
+
+To deploy everything from scratch (k3s + all workloads):
+
 ```bash
 cd host-config/ansible
-
-# Install k3s with dual-stack support and MetalLB
-ansible-playbook -i inventory k8s-infra.yaml
-
-# Or run individual playbooks
-ansible-playbook -i inventory k3s-install.yaml
+ansible-playbook -i inventory deploy-all.yaml
 ```
+
+### Incremental Deployment
+
+Deploy only infrastructure (k3s, MetalLB, cert-manager):
+
+```bash
+ansible-playbook -i inventory k8s-infra.yaml
+```
+
+Deploy only workloads (assumes infrastructure is already running):
+
+```bash
+ansible-playbook -i inventory deploy-workloads.yaml
+```
+
+Deploy individual components:
+
+```bash
+# Just k3s
+ansible-playbook -i inventory k3s-install.yaml
+
+# Individual workloads
+ansible-playbook -i inventory -t traefik deploy-workloads.yaml
+```
+
+## Deployed Workloads
+
+All workloads are configured with dual-stack LoadBalancer services:
+
+- **Traefik** - Ingress controller (HTTP/HTTPS)
+- **Vaultwarden** - Password manager
+- **Gotify** - Notification server
+- **DNS** - CoreDNS (standard and kids profiles)
+- **MQTT** - Mosquitto broker
+- **Monitoring** - Prometheus + Alertmanager
+
+### IP Addressing Strategy
+
+- **DNS services**: Use fixed IPv4/IPv6 addresses (configured via host_vars) so you can reference them in DHCP and upstream resolvers.
+- **Application services** (Traefik, Vaultwarden, Gotify, MQTT): Use dynamic MetalLB IP assignment; clients reach them via DNS names and Ingress.
+
+### Application IPv6 Configuration
+
+For applications to work with dual-stack, they must listen on `::` (all interfaces, IPv4+IPv6) instead of `0.0.0.0` (IPv4 only):
+
+- **Vaultwarden**: Uses `ROCKET_ADDRESS=::` environment variable
+- **Most containers**: Default to listening on all interfaces
 
 ## DNS IPv6 Forwarding
 

@@ -1,3 +1,24 @@
-# Host-specific variables for bluebox
+# Host-specific variables for proxmox
 dns_ipv6_bind: "2a02:a457:f2c0::8"
 dns_ipv4_backend: "172.16.3.2"
+
+# MetalLB IP pools - separated into static and dynamic
+metallb_ipv4_pool_static: "172.16.3.0-172.16.3.10"    # Static assignments (DNS)
+metallb_ipv4_pool_dynamic: "172.16.3.11-172.16.3.254"  # Dynamic assignments (apps)
+metallb_ipv6_pool_static: "2a02:a457:f2c0:0:1::d0-2a02:a457:f2c0:0:1::d9"   # Static IPv6 (DNS)
+metallb_ipv6_pool_dynamic: "2a02:a457:f2c0:0:1::100-2a02:a457:f2c0:0:1::1ff"  # Dynamic IPv6 (apps)
+
+# LoadBalancer IP assignments
+# DNS Services - redundant IPs per protocol (from static pool)
+dns_kids_ipv4_lb: "172.16.3.0"         # Kids DNS: 1st IPv4 LoadBalancer
+dns_kids_ipv4_lb2: "172.16.3.1"        # Kids DNS: 2nd IPv4 LoadBalancer (redundancy)
+dns_kids_ipv6_lb: "2a02:a457:f2c0:0:1::d0"  # Kids DNS: 1st IPv6 LoadBalancer
+dns_kids_ipv6_lb2: "2a02:a457:f2c0:0:1::d1"  # Kids DNS: 2nd IPv6 LoadBalancer
+
+dns_standard_ipv4_lb: "172.16.3.2"  # Standard DNS: 1st IPv4 LoadBalancer
+dns_standard_ipv4_lb2: "172.16.3.3"  # Standard DNS: 2nd IPv4 LoadBalancer (redundancy)
+dns_standard_ipv6_lb: "2a02:a457:f2c0:0:1::d2"  # Standard DNS: 1st IPv6 LoadBalancer
+dns_standard_ipv6_lb2: "2a02:a457:f2c0:0:1::d3"  # Standard DNS: 2nd IPv6 LoadBalancer (redundancy)
+
+# Application services (Traefik, Vaultwarden, Gotify, MQTT)
+# Use dynamic MetalLB IP assignment; rely on DNS names
