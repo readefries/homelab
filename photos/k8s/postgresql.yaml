@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: photos-postgresql
+  namespace: photos
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: photos-postgresql
+  template:
+    metadata:
+      labels:
+        app: photos-postgresql
+    spec:
+      containers:
+      - name: postgresql
+        image: postgres:16-alpine
+        args:
+        - -c
+        - unix_socket_directories=
+        - -c
+        - listen_addresses=*
+        env:
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: photos-postgresql-secret
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: photos-postgresql-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: photos-postgresql-secret
+              key: POSTGRES_PASSWORD
+        - name: TZ
+          value: Europe/Amsterdam
+        ports:
+        - containerPort: 5432
+          name: postgresql
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: photos-postgres-data
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: photos-postgresql
+  namespace: photos
+spec:
+  selector:
+    app: photos-postgresql
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgresql

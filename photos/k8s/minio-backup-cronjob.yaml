@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: photos-minio-backup
+  namespace: photos
+spec:
+  schedule: "45 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: photos-minio-data
+          - name: filen-auth
+            secret:
+              secretName: filen-auth
+          containers:
+          - name: backup-runner
+            image: ghcr.io/readefries/backup-runner-filen:latest
+            env:
+            - name: TARGET_DIR
+              value: /data
+            - name: FILEN_DEST
+              value: /backups/photos/minio/
+            - name: RETENTION_DAYS
+              value: "45"
+            volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: filen-auth
+              mountPath: /root/.config/filen-cli
+              readOnly: true

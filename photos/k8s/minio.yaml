@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: photos-minio
+  namespace: photos
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: photos-minio
+  template:
+    metadata:
+      labels:
+        app: photos-minio
+    spec:
+      containers:
+      - name: minio
+        image: quay.io/minio/minio:latest
+        args:
+        - server
+        - /data
+        - --console-address=:9001
+        env:
+        - name: MINIO_ROOT_USER
+          valueFrom:
+            secretKeyRef:
+              name: photos-minio-secret
+              key: MINIO_ROOT_USER
+        - name: MINIO_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: photos-minio-secret
+              key: MINIO_ROOT_PASSWORD
+        - name: TZ
+          value: Europe/Amsterdam
+        ports:
+        - containerPort: 9000
+          name: s3
+        - containerPort: 9001
+          name: console
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: photos-minio-data
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: photos-minio
+  namespace: photos
+spec:
+  selector:
+    app: photos-minio
+  ports:
+  - port: 9000
+    targetPort: 9000
+    protocol: TCP
+    name: s3
+  - port: 9001
+    targetPort: 9001
+    protocol: TCP
+    name: console

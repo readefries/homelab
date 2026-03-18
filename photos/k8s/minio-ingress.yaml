@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: photos-minio
+  namespace: photos
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - s3.photos.xs4some.nl
+    secretName: photos-minio-s3-tls
+  rules:
+  - host: s3.photos.xs4some.nl
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: photos-minio
+            port:
+              number: 9000
