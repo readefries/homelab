@@ -2,21 +2,45 @@
 # Configure k3s's built-in Traefik with Let's Encrypt support
 # Note: k3s Traefik runs in kube-system namespace, not a separate traefik namespace
 
+- name: Copy Traefik k8s manifests
+  copy:
+    src: "{{ playbook_dir }}/../../traefik/k8s/"
+    dest: /tmp/traefik-config/
+    mode: '0644'
+
+- name: Copy Traefik host service manifests
+  copy:
+    src: "{{ playbook_dir }}/../../traefik/hosts/"
+    dest: /tmp/traefik-hosts/
+    mode: '0644'
+
+- name: Template Traefik secret (CloudDNS credentials from vault)
+  template:
+    src: secret-cloudns.yaml.j2
+    dest: /tmp/traefik-config/secret-cloudns.yaml
+    mode: '0600'
+
 - name: Apply Traefik secret (CloudDNS credentials for Let's Encrypt DNS challenge)
   command:
-    cmd: kubectl apply -f {{ playbook_dir }}/../../traefik/k8s/secret-cloudns.yaml
+    cmd: kubectl apply -f /tmp/traefik-config/secret-cloudns.yaml
   register: traefik_secret
   changed_when: "'created' in traefik_secret.stdout or 'configured' in traefik_secret.stdout"
 
-- name: Apply Traefik config (Let's Encrypt and DNS resolution)
+- name: Apply Traefik HelmChartConfig (MetalLB pool, ACME cert resolver, env vars)
   command:
-    cmd: kubectl apply -f {{ playbook_dir }}/../../traefik/k8s/config.yaml
-  register: traefik_config
-  changed_when: "'created' in traefik_config.stdout or 'configured' in traefik_config.stdout"
+    cmd: kubectl apply -f /tmp/traefik-config/helmchartconfig.yaml
+  register: traefik_helmconfig
+  changed_when: "'created' in traefik_helmconfig.stdout or 'configured' in traefik_helmconfig.stdout"
+
+- name: Apply Traefik ip-allowlist middleware
+  command:
+    cmd: kubectl apply -f /tmp/traefik-config/ip-allowlist-middleware.yaml
+  register: traefik_middleware
+  changed_when: "'created' in traefik_middleware.stdout or 'configured' in traefik_middleware.stdout"
 
 - name: Apply host services (external services exposed via Traefik)
   command:
-    cmd: kubectl apply -f {{ playbook_dir }}/../../traefik/hosts/
+    cmd: kubectl apply -f /tmp/traefik-hosts/
   register: traefik_hosts
   changed_when: "'created' in traefik_hosts.stdout or 'configured' in traefik_hosts.stdout"
 

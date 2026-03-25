@@ -25,7 +25,7 @@ vim ../cloudns-issuers.yaml
 ### 2. Deploy
 
 ```bash
-./deploy.sh bluebox    # or: ./deploy.sh proxmox
+./deploy.sh floki    # or: ./deploy.sh proxmox
 ```
 
 The script will:

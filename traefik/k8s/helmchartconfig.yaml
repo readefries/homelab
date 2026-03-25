@@ -1,0 +1,45 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    service:
+      annotations:
+        "metallb.universe.tf/address-pool": "dynamic-pool"
+      ipFamilyPolicy: PreferDualStack
+      ipFamilies:
+        - IPv4
+        - IPv6
+
+    persistence:
+      enabled: true
+      name: data
+      size: 128Mi
+      path: /data
+
+    env:
+      - name: CLOUDNS_SUB_AUTH_ID
+        valueFrom:
+          secretKeyRef:
+            name: traefik-acme-cloudns
+            key: subauth-id
+      - name: CLOUDNS_AUTH_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: traefik-acme-cloudns
+            key: auth-password
+
+    certificatesResolvers:
+      letsencrypt:
+        acme:
+          email: readefries@xs4some.nl
+          storage: /data/acme.json
+          dnsChallenge:
+            provider: cloudns
+            delayBeforeCheck: 180
+            resolvers:
+              - "86.54.11.100:53"
+              - "9.9.9.9:53"
+            disablePropagationCheck: false

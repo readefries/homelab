@@ -9,6 +9,7 @@
     - plex
     - smokeping
     - syncthing
+    - traefik
     - transmission
     - vaultwarden
     - www

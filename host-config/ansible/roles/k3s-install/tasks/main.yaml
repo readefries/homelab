@@ -1,4 +1,16 @@
 ---
+- name: Configure IPv6 address on interface
+  command:
+    cmd: "ip addr add {{ dns_ipv6_bind }}/56 dev vmbr0"
+  register: ipv6_add
+  failed_when: false
+  changed_when: "'File exists' not in ipv6_add.stderr and ipv6_add.rc == 0"
+
+- name: Bring up IPv6 address (if needed)
+  command:
+    cmd: "ip link set dev vmbr0 up"
+  changed_when: false
+
 - name: Enable IPv6 forwarding
   sysctl:
     name: net.ipv6.conf.all.forwarding
@@ -13,12 +25,20 @@
     dest: /tmp/k3s-install.sh
     mode: '0755'
 
+- name: Stop k3s service if it exists (cleanup failed installation)
+  service:
+    name: k3s
+    state: stopped
+  ignore_errors: yes
+
 - name: Run k3s install script with dual-stack configuration
   command:
     cmd: >
       sh /tmp/k3s-install.sh
       --cluster-cidr=10.42.0.0/16,fd00:10:42::/56
       --service-cidr=10.43.0.0/16,fd00:10:43::/112
+      --node-ip=172.16.0.97,{{ dns_ipv6_bind }}
+      --disable=servicelb
   args:
     creates: /usr/local/bin/k3s
   environment:

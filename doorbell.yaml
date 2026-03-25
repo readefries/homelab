@@ -8,8 +8,8 @@ esp8266:
 # WiFi connection, correct these
 # with values for your WiFi.
 wifi:
-  ssid: "SSID"
-  password: "PASSWORD"
+  ssid: xs4some.local
+  password: 56RZnI4NwAOqUIQX
 
 # Enable logging.
 logger:

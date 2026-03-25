@@ -6,6 +6,12 @@
   changed_when: "'created' in cert_ns.stdout or cert_ns.rc == 0"
   failed_when: "cert_ns.rc != 0 and 'already exists' not in cert_ns.stderr"
 
+- name: Copy cert-manager ClusterIssuer manifest
+  copy:
+    src: "{{ playbook_dir }}/../../cert-manager/clusterissuer.yaml"
+    dest: /tmp/cert-manager-clusterissuer.yaml
+    mode: '0644'
+
 - name: Get latest cert-manager release tag
   uri:
     url: https://api.github.com/repos/cert-manager/cert-manager/releases/latest
@@ -34,7 +40,7 @@
 
 - name: Apply cert-manager ClusterIssuer for Let's Encrypt
   command:
-    cmd: kubectl apply -f {{ playbook_dir }}/../../cert-manager/k8s/cluster-issuer.yaml
+    cmd: kubectl apply -f /tmp/cert-manager-clusterissuer.yaml
   register: cluster_issuer
   changed_when: "'created' in cluster_issuer.stdout or 'configured' in cluster_issuer.stdout"
 

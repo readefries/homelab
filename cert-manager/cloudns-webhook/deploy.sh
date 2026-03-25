@@ -4,14 +4,14 @@
 set -e
 
 WORKSPACE="/workspaces/homelab"
-CLUSTER="${1:-bluebox}"
+CLUSTER="${1:-floki}"
 
-if [ "$CLUSTER" = "bluebox" ]; then
+if [ "$CLUSTER" = "floki" ]; then
     KUBECTL="kubectl"
 elif [ "$CLUSTER" = "proxmox" ]; then
     KUBECTL="ssh root@proxmox kubectl"
 else
-    echo "Usage: $0 [bluebox|proxmox]"
+    echo "Usage: $0 [floki|proxmox]"
     exit 1
 fi
 

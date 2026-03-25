@@ -2,7 +2,7 @@
 
 ## Summary
 
-Added cert-manager DNS-01 support for ClouDNS via webhook provider. Ready to test on both bluebox and proxmox clusters.
+Added cert-manager DNS-01 support for ClouDNS via webhook provider. Ready to test on both floki and proxmox clusters.
 
 ## Files Created/Added
 
@@ -50,7 +50,7 @@ vim cert-manager/cloudns-issuers.yaml
 
 # Run deployment (interactive)
 cd cert-manager/cloudns-webhook
-./deploy.sh bluebox    # or: proxmox
+./deploy.sh floki    # or: proxmox
 ```
 
 Or use individual commands in CLOUDNS-DNS01-SETUP.md → "Deployment" section.
@@ -76,7 +76,7 @@ Or use individual commands in CLOUDNS-DNS01-SETUP.md → "Deployment" section.
 ## Next Steps
 
 1. **Edit password:** Update `auth_password` in cert-manager/cloudns-issuers.yaml
-2. **Deploy:** Run `cert-manager/cloudns-webhook/deploy.sh bluebox` (or proxmox)
+2. **Deploy:** Run `cert-manager/cloudns-webhook/deploy.sh floki` (or proxmox)
 3. **Verify:** Check pod, apiservice, clusterissuer status (see CLOUDNS-DNS01-SETUP.md)
 4. **Test:** Create test Ingress with `cert-manager.io/cluster-issuer: letsencrypt-dns01-cloudns-staging`
 5. **Monitor:** Watch cert-manager and webhook logs for DNS challenge flow

@@ -1,4 +1,4 @@
-# Host-specific variables for bluebox
+# Host-specific variables for floki
 dns_ipv6_bind: "2a02:a457:f2c0:0:a82d:1634:bd42:eb70"
 dns_ipv4_backend: "172.16.3.2"
 

@@ -5,7 +5,7 @@
 This directory contains the resources to deploy cert-manager with ClouDNS DNS-01 ACME provider to replace the failing Traefik ACME setup.
 
 **Status:** Ready to test  
-**Cluster(s):** bluebox, proxmox  
+**Cluster(s):** floki, proxmox  
 **Domain:** xs4some.nl  
 **ClouDNS Sub-Auth ID:** 81154
 
@@ -80,7 +80,7 @@ Expected resources:
 
 ```bash
 cd cert-manager/cloudns-webhook
-./deploy.sh bluebox    # or: proxmox
+./deploy.sh floki    # or: proxmox
 # Script will prompt for password interactively
 ```
 

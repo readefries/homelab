@@ -18,7 +18,7 @@ metadata:
   namespace: default
 subsets:
 - addresses:
-  - ip: 172.16.0.8  # Home Assistant IPv4 on Proxmox host
+  - ip: 172.16.0.117  # Home Assistant VM IPv4 on Proxmox host
   ports:
   - port: 8123
 ---

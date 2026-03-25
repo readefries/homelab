@@ -10,7 +10,7 @@ spec:
     - kind: Rule
       match: Host(`traefik.xs4some.nl`)
       middlewares:
-        - name: ip-whitelist
+        - name: ip-allowlist
       services:
         - name: traefik-dashboard
           port: 8080

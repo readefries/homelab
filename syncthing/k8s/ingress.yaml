@@ -1,10 +1,10 @@
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: ip-whitelist
+  name: ip-allowlist
   namespace: syncthing
 spec:
-  ipWhiteList:
+  ipAllowList:
     sourceRange:
       - 172.16.0.0/22
 ---
@@ -20,7 +20,7 @@ spec:
     - kind: Rule
       match: Host(`syncthing.xs4some.nl`)
       middlewares:
-        - name: ip-whitelist
+        - name: ip-allowlist
       services:
         - name: syncthing
           port: 8384

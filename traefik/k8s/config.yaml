@@ -43,11 +43,11 @@ data:
             - 9.9.9.9:53
             delayBeforeCheck: 180s
             disablePropagationCheck: false
-          caServer: https://acme-staging-v02.api.letsencrypt.org/directory
+          # caServer defaults to Let's Encrypt production
       letsencrypt-http:
         acme:
           email: readefries@xs4some.nl
           storage: /data/acme-http.json
           httpChallenge:
             entryPoint: web
-          caServer: https://acme-staging-v02.api.letsencrypt.org/directory
+          # caServer defaults to Let's Encrypt production
